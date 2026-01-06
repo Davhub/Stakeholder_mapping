@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "994836624683",
+    "project_id": "mapping-tool-6947c",
+    "storage_bucket": "mapping-tool-6947c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:994836624683:android:dcf765cc3aa4271b22016e",
+        "android_client_info": {
+          "package_name": "com.example.mapping"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAavmndX3ySqs9r8U_lTjiXCe75tMotckE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
