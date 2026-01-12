@@ -104,7 +104,7 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
 
       // Load from Firestore
       final querySnapshot = await FirebaseFirestore.instance
-          .collection('stakeholder')
+          .collection('stakeholders')
           .where('state', isEqualTo: userState)
           .get();
 
@@ -148,7 +148,20 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
         bool matchesWard =
             selectedWard == null || stakeholder.ward == selectedWard;
 
-        return matchesSearch && matchesLGA && matchesWard;
+        // Apply initial filter if provided
+        bool matchesInitialFilter = true;
+        if (widget.initialFilter == 'association' &&
+            widget.filterValue != null) {
+          matchesInitialFilter = stakeholder.association == widget.filterValue;
+        } else if (widget.initialFilter == 'ward' &&
+            widget.filterValue != null) {
+          matchesInitialFilter = stakeholder.ward == widget.filterValue;
+        }
+
+        return matchesSearch &&
+            matchesLGA &&
+            matchesWard &&
+            matchesInitialFilter;
       }).toList();
     });
   }
@@ -173,12 +186,20 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Build title based on filter
+    String title = 'Stakeholder Directory';
+    if (widget.initialFilter == 'association' && widget.filterValue != null) {
+      title = widget.filterValue!;
+    } else if (widget.initialFilter == 'ward' && widget.filterValue != null) {
+      title = '${widget.filterValue!} Ward';
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          'Stakeholder Directory',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
@@ -346,7 +367,7 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: Colors.grey.shade200),
       ),
       child: InkWell(
@@ -358,22 +379,32 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
             ),
           );
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              CircleAvatar(
-                backgroundColor: Colors.blue.shade100,
-                radius: 28,
-                child: Text(
-                  stakeholder.fullName.isNotEmpty
-                      ? stakeholder.fullName[0].toUpperCase()
-                      : 'S',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade700,
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.blue.shade300, Colors.blue.shade600],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    stakeholder.fullName.isNotEmpty
+                        ? stakeholder.fullName[0].toUpperCase()
+                        : 'S',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -391,20 +422,20 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       stakeholder.association,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: Colors.grey[600],
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.location_on,
+                        Icon(Icons.location_on_rounded,
                             size: 14, color: Colors.grey[500]),
                         const SizedBox(width: 4),
                         Expanded(
@@ -423,7 +454,9 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.grey[400]),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right_rounded,
+                  color: Colors.grey[400], size: 24),
             ],
           ),
         ),
@@ -438,14 +471,21 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              searchQuery.isNotEmpty ||
-                      selectedLGA != null ||
-                      selectedWard != null
-                  ? Icons.search_off
-                  : Icons.people_outline,
-              size: 80,
-              color: Colors.grey[300],
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                searchQuery.isNotEmpty ||
+                        selectedLGA != null ||
+                        selectedWard != null
+                    ? Icons.search_off
+                    : Icons.people_outline,
+                size: 64,
+                color: Colors.blue.shade300,
+              ),
             ),
             const SizedBox(height: 24),
             Text(
@@ -454,10 +494,10 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
                       selectedWard != null
                   ? 'No Results Found'
                   : 'No Stakeholders Available',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 12),
@@ -470,7 +510,7 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[500],
+                color: Colors.grey[600],
               ),
             ),
             if (searchQuery.isNotEmpty ||
@@ -486,6 +526,9 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
                   foregroundColor: Colors.white,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],

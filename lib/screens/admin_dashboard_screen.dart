@@ -93,7 +93,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         'Oyo West',
         'Saki East',
         'Saki West',
-        'Surulere',
+        'Surulere (Oyo)',
       ]
     };
 
@@ -817,7 +817,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         'SEPETERI/BAPON',
       ],
 
-      'Surulere': [
+      'Surulere (Oyo)': [
         'BAYA‐OJE',
         'IGBON/GAMBARI',
         'IRESAAPA',
@@ -1241,13 +1241,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           stakeholders[index].data() as Map<String, dynamic>;
                       final stakeholderName =
                           stakeholder['fullName'] ?? 'No Name';
-                      final stakeholderState = stakeholder['state'] ?? 'State';
-                      final stakeholderLg = stakeholder['lg'] ?? 'No LGA';
-                      final stakeholderWard = stakeholder['ward'] ?? 'Ward';
-                      final stakeholderWhatsappNumber =
-                          stakeholder['whatsappNumber'] ?? 'Whatsapp';
-                      final stakeholderAssociation =
-                          stakeholder['association'] ?? 'No Association';
                       final stakeholderId = stakeholders[index].id;
 
                       return InkWell(

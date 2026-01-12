@@ -8,7 +8,7 @@ class DirectoryScreenWithNavbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: const DashboardScreen(),
+      body: const StakeholderListScreen(),
       bottomNavigationBar: const CustomNavBar(currentIndex: 1),
     );
   }

@@ -86,7 +86,7 @@ class _AddStakeholderScreenState extends State<AddStakeholderScreen> {
       'Oyo West',
       'Saki East',
       'Saki West',
-      'Surulere',
+      'Surulere (Oyo)',
     ],
   };
 
@@ -830,7 +830,7 @@ class _AddStakeholderScreenState extends State<AddStakeholderScreen> {
       'SEPETERI/BAPON',
     ],
 
-    'Surulere': [
+    'Surulere (Oyo)': [
       'BAYA‐OJE',
       'IGBON/GAMBARI',
       'IRESAAPA',

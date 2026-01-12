@@ -88,32 +88,24 @@ class CustomNavBar extends StatelessWidget {
     
     switch (index) {
       case 0:
-        screen = const HomeScreen();
+        screen = const HomeScreenWithNavbar();
         break;
       case 1:
-        screen = const DashboardScreen();
+        screen = const DirectoryScreenWithNavbar();
         break;
       case 2:
-        screen = const FavouriteScreen();
+        screen = const FavouriteScreenWithNavbar();
         break;
       case 3:
-        screen = const ProfileScreen();
+        screen = const ProfileScreenWithNavbar();
         break;
       default:
-        screen = const HomeScreen();
+        screen = const HomeScreenWithNavbar();
     }
 
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => screen,
-        transitionDuration: const Duration(milliseconds: 300),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
-      ),
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => screen),
+      (route) => false,
     );
   }
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mapping/screens/screen.dart';
 
 class AdminStakeholderViewScreen extends StatefulWidget {
   final Map<String, dynamic> stakeholder;
@@ -21,17 +20,18 @@ class AdminStakeholderViewScreen extends StatefulWidget {
 class _AdminStakeholderViewScreenState
     extends State<AdminStakeholderViewScreen> {
   //capitalization functions
-  void _editStakeholder(
-      String stakeholderId, Map<String, dynamic> stakeholderData) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => EditStakeholderScreen(
-            stakeholderId: stakeholderId,
-            stakeholderData: stakeholderData,
-            data: {}),
-      ),
-    );
-  }
+  // TODO: Implement edit functionality
+  // void _editStakeholder(
+  //     String stakeholderId, Map<String, dynamic> stakeholderData) {
+  //   Navigator.of(context).push(
+  //     MaterialPageRoute(
+  //       builder: (context) => EditStakeholderScreen(
+  //           stakeholderId: stakeholderId,
+  //           stakeholderData: stakeholderData,
+  //           data: {}),
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {

@@ -15,7 +15,6 @@ class _AuthScreenState extends State<AuthScreen> {
   String? _email;
   String? _password;
   String? _confirmPassword;
-  String? _state;
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -123,7 +122,7 @@ class _AuthScreenState extends State<AuthScreen> {
       } else {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const DashboardScreen(),
+            builder: (context) => const HomeScreenWithNavbar(),
           ),
         );
       }

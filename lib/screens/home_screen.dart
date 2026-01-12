@@ -6,6 +6,8 @@ import 'package:mapping/component/recent_stakeholders_manager.dart';
 import 'package:mapping/model/model.dart';
 import 'package:mapping/screens/stakeholder_list_screen.dart';
 import 'package:mapping/screens/stakeholder_view.dart';
+import 'package:mapping/screens/association_list_screen.dart';
+import 'package:mapping/screens/ward_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -74,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Load fresh data from Firestore
       final querySnapshot = await FirebaseFirestore.instance
-          .collection('stakeholder')
+          .collection('stakeholders')
           .where('state', isEqualTo: currentUserState)
           .get();
 
@@ -264,82 +266,78 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                   _buildDashboardCard(
-                      title: 'Associations',
-                      count: totalAssociations.toString(),
-                      icon: Icons.business_rounded,
-                      gradient: LinearGradient(
-                        colors: [Colors.teal.shade400, Colors.teal.shade600],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      onTap: () {
-                        // Navigate to associations view
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const StakeholderListScreen(),
-                          ),
-                        );
-                      },
+                    title: 'Associations',
+                    count: totalAssociations.toString(),
+                    icon: Icons.business_rounded,
+                    gradient: LinearGradient(
+                      colors: [Colors.teal.shade400, Colors.teal.shade600],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    _buildDashboardCard(
-                      title: 'Total Wards',
-                      count: totalWards.toString(),
-                      icon: Icons.map_rounded,
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.purple.shade400,
-                          Colors.purple.shade600
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      onTap: () {
-                        // Navigate to wards view
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const StakeholderListScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-
-                // Recent Stakeholders Section
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Recently Viewed",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    if (recentStakeholders.isNotEmpty)
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const StakeholderListScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                        label: const Text("View All"),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.blue,
+                    onTap: () {
+                      // Navigate to associations view
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AssociationListScreen(),
                         ),
+                      );
+                    },
+                  ),
+                  _buildDashboardCard(
+                    title: 'Total Wards',
+                    count: totalWards.toString(),
+                    icon: Icons.map_rounded,
+                    gradient: LinearGradient(
+                      colors: [Colors.purple.shade400, Colors.purple.shade600],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    onTap: () {
+                      // Navigate to wards view
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const WardListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // Recent Stakeholders Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Recently Viewed",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  if (recentStakeholders.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const StakeholderListScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                      label: const Text("View All"),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.blue,
                       ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
 
               // Recent Stakeholders List
               if (recentStakeholders.isEmpty)
@@ -409,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       count,
                       style: const TextStyle(
-                        fontSize: 32,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mapping/model/model.dart';
 import 'package:mapping/component/recent_stakeholders_manager.dart';
-import 'package:url_launcher/url_launcher.dart'; // Import the url_launcher package
+import 'package:url_launcher/url_launcher.dart';
 
 class StakeholderView extends StatefulWidget {
   const StakeholderView({super.key, required this.holder});
@@ -39,329 +38,272 @@ class _StakeholderViewState extends State<StakeholderView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: const Color(0xffe9f7fc),
-        title: Padding(
-          padding: const EdgeInsets.only(left: 45),
-          child: Text(
-            'Stakeholder Details',
-            style: GoogleFonts.montserrat(
-              textStyle: const TextStyle(
-                fontSize: 20,
-              ),
-            ),
-          ),
+        title: const Text(
+          'Stakeholder Details',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      //AppBar ends here
-
-      //body starts here
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              //First Section picture box container
-              Container(
-                height: 290,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(0xffe9f7fc),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 35),
-                  child: Center(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        CircleAvatar(
-                          maxRadius: 70,
-                          child: Image.asset('assets/avatar.png'),
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              //fist section picture box container ends here
-
-              //second section plain background
-              Expanded(
-                child: Container(color: Colors.white54),
-              ),
-              //section ends her (plain background )
-            ],
-          ),
-
-          //position for elevated card
-
-          Positioned(
-            top: 200, // Slightly above the bottom of the first section
-            left: 20,
-            right: 20,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.all(
-                  Radius.circular(15),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Header Section with Gradient
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue, Colors.blue.shade700],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.only(top: 10, bottom: 10),
+                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    //Row First: Name
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(right: 20.0, left: 20, top: 10),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Name:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            widget.holder.fullName,
-                            style: const TextStyle(fontSize: 16),
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.white.withOpacity(0.9), Colors.white],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(60),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
                           ),
                         ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          widget.holder.fullName.isNotEmpty
+                              ? widget.holder.fullName[0].toUpperCase()
+                              : 'S',
+                          style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
                       ),
                     ),
-                    const Divider(),
-
-                    //Row Two: Phone number (Clickable)
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(right: 20.0, left: 20, top: 10),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Phone Number:',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 16),
-                          ),
-                          const SizedBox(width: 5),
-                          GestureDetector(
-                            onTap: () => _launchDialer(
-                                widget.holder.phoneNumber), // Launch phone dialer
-                            child: Text(
-                              widget.holder.phoneNumber,
-                              style: const TextStyle(
-                                fontSize: 16, // Underline for better UX
-                              ),
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 20),
+                    Text(
+                      widget.holder.fullName,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    const Divider(),
-
-                    //Row Three: Whatsapp number
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(right: 20.0, left: 20, top: 10),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Whatsapp Number:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            widget.holder.whatsappNumber,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ],
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                    ),
-                    const Divider(),
-
-                    //Row four: Email section
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(right: 20.0, left: 20, top: 10),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Email:',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 16),
-                          ),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          Text(
-                            widget.holder.email,
-                            style: const TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(),
-
-                    //Row Five: State section
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(right: 20.0, left: 20, top: 10),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'State:',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 16),
-                          ),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          Text(
-                            widget.holder.state,
-                            style: const TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(),
-
-                    //Row Six: local government Section
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(right: 20.0, left: 20, top: 10),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Local Government:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          Text(
-                            widget.holder.lg,
-                            style: const TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(),
-
-                    //Row Seven: Ward section
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(right: 20.0, left: 20, top: 10),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Ward:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          Text(
-                            widget.holder.ward,
-                            style: const TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(),
-
-                    //Row Eight: Level of Administration Section
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(right: 20.0, left: 20, top: 10),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Level of Administration:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          Text(
-                            widget.holder.levelOfAdministration,
-                            style: const TextStyle(
-                              fontSize: 16,
-                            ),
-                            overflow: TextOverflow.visible,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(),
-
-                    //Row Nine: Assocaition Section
-
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        right: 20.0,
-                        left: 20,
-                        top: 10,
-                        bottom: 10,
-                      ),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Association:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          Expanded(
-                            child: Text(
-                              widget.holder.association,
-                              style: const TextStyle(
-                                fontSize: 16,
-                              ),
-                              overflow: TextOverflow.visible,
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                        ],
+                      child: Text(
+                        widget.holder.association,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
 
-          //position for elevated card ends here
-        ],
+            // Details Section
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // Contact Information Card
+                  _buildSectionCard(
+                    title: 'Contact Information',
+                    icon: Icons.contact_phone,
+                    children: [
+                      _buildDetailTile(
+                        icon: Icons.phone,
+                        label: 'Phone Number',
+                        value: widget.holder.phoneNumber,
+                        onTap: () => _launchDialer(widget.holder.phoneNumber),
+                        isClickable: true,
+                      ),
+                      _buildDetailTile(
+                        icon: Icons.chat,
+                        label: 'WhatsApp',
+                        value: widget.holder.whatsappNumber,
+                      ),
+                      _buildDetailTile(
+                        icon: Icons.email,
+                        label: 'Email',
+                        value: widget.holder.email,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Location Information Card
+                  _buildSectionCard(
+                    title: 'Location Information',
+                    icon: Icons.location_on,
+                    children: [
+                      _buildDetailTile(
+                        icon: Icons.map,
+                        label: 'State',
+                        value: widget.holder.state,
+                      ),
+                      _buildDetailTile(
+                        icon: Icons.location_city,
+                        label: 'Local Government',
+                        value: widget.holder.lg,
+                      ),
+                      _buildDetailTile(
+                        icon: Icons.place,
+                        label: 'Ward',
+                        value: widget.holder.ward,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Administrative Information Card
+                  _buildSectionCard(
+                    title: 'Administrative Information',
+                    icon: Icons.admin_panel_settings,
+                    children: [
+                      _buildDetailTile(
+                        icon: Icons.business,
+                        label: 'Association',
+                        value: widget.holder.association,
+                      ),
+                      _buildDetailTile(
+                        icon: Icons.layers,
+                        label: 'Level of Administration',
+                        value: widget.holder.levelOfAdministration,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: Colors.blue, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailTile({
+    required IconData icon,
+    required String label,
+    required String value,
+    VoidCallback? onTap,
+    bool isClickable = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.grey[600], size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: isClickable ? Colors.blue : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isClickable)
+                Icon(Icons.phone, color: Colors.blue, size: 20),
+            ],
+          ),
+        ),
       ),
     );
   }
