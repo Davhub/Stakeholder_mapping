@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to get user role
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function getUserState() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.state;
+    }
+    
+    // Stakeholders - state-scoped access
+    match /stakeholders/{stakeholderId} {
+      allow read: if request.auth != null && 
+                     getUserState() == resource.data.state;
+      
+      allow create: if request.auth != null && 
+                       getUserRole() == 'Admin' &&
+                       request.resource.data.state == getUserState();
+      
+      allow update: if request.auth != null && 
+                       getUserRole() == 'Admin' &&
+                       resource.data.state == getUserState();
+      
+      allow delete: if request.auth != null && 
+                       getUserRole() == 'Admin' &&
+                       resource.data.state == getUserState();
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Managed by admin only
+    }
+  }
+}

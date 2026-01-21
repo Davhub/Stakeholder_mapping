@@ -887,39 +887,64 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Do you want to delete this?'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+              SizedBox(width: 12),
+              Text(
+                'Delete Stakeholder',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Are you sure you want to delete this stakeholder? This action cannot be undone.',
+            style: TextStyle(fontSize: 14),
+          ),
           actions: [
             TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
               onPressed: () async {
                 await FirebaseFirestore.instance
                     .collection('stakeholders')
                     .doc(stakeholderId)
                     .delete();
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content:
-                          Text('Stakeholder has been  deleted successfully!')),
-                );
-
-                Navigator.of(context).pop();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.white),
+                          SizedBox(width: 12),
+                          Text('Stakeholder deleted successfully!'),
+                        ],
+                      ),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  Navigator.of(context).pop();
+                }
               },
-              child: const Text('Yes'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Delete'),
             ),
           ],
         );
       },
     );
-    /*await FirebaseFirestore.instance
-        .collection('stakeholders')
-        .doc(stakeholderId)
-        .delete();*/
   }
 
   void _editStakeholder(
@@ -959,280 +984,293 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffe9f7fc),
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('$adminState Admin Dashboard'),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  onPressed: _addStakeholder,
-                  icon: const Icon(Icons.person_add),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.admin_panel_settings, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '$adminState Admin Dashboard',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
-                IconButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text(
-                            'Are you sure you want to logout?',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: _logout,
-                              child: const Text(
-                                'Yes',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            )
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  icon: const Icon(Icons.logout),
-                ),
-              ],
-            )
+              ),
+            ),
           ],
         ),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: _addStakeholder,
+            icon: const Icon(Icons.person_add),
+            tooltip: 'Add Stakeholder',
+          ),
+          IconButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text(
+                      'Logout Confirmation',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    content: const Text('Are you sure you want to logout?'),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _logout,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Logout'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-
-      /*
-      drawer: Drawer(
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: Colors.blue),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const CircleAvatar(
-                    radius: 30,
-                    backgroundImage: AssetImage('assets/avatar.png'),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    child: FutureBuilder<User?>(
-                      future: FirebaseAuth.instance.authStateChanges().first,
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData && snapshot.data?.email != null) {
-                          return Column(
-                            children: [
-                              const Text(
-                                'Welcome Back,',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              Text(
-                                '${snapshot.data!.email}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                                textAlign: TextAlign.center,
-                              )
-                            ],
-                          );
-                        } else {
-                          return const Text(
-                            'Welcome Back',
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ],
+            // Filter Section Card
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.grey.shade200),
               ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.person_add_alt),
-                    title: const Text('Add Stakeholder'),
-                    onTap: _addStakeholder,
-                  ),
-
-                  /*
-                  ListTile(
-                    leading: const Icon(Icons.dashboard),
-                    title: const Text('Dash Stakeholder'),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => AdminDashboard(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  */
-                ],
-              ),
-            ),
-
-            //logout button in drawer
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: GestureDetector(
-                onTap: _logout,
-                child: Container(
-                  decoration: const BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.all(Radius.circular(15))),
-                  child: const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Icon(Icons.logout),
-                        SizedBox(
-                          width: 10,
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.deepPurple.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.filter_list,
+                            color: Colors.deepPurple,
+                            size: 20,
+                          ),
                         ),
-                        Text(
-                          'Logout',
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Filter Stakeholders',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    // LGA Dropdown
+                    DropdownButtonFormField<String>(
+                      value: selectedLGA.isEmpty ? null : selectedLGA,
+                      items: (lgaMap[adminState] ?? []).map((String lga) {
+                        return DropdownMenuItem<String>(
+                          value: lga,
+                          child: Text(lga),
+                        );
+                      }).toList(),
+                      hint: const Text('Select Local Government'),
+                      onChanged: _onLGAChanged,
+                      decoration: InputDecoration(
+                        labelText: 'Local Government Area',
+                        prefixIcon: const Icon(Icons.location_city, size: 20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.deepPurple,
+                            width: 2,
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Ward Dropdown
+                    DropdownButtonFormField<String>(
+                      value: selectedWard.isEmpty ? null : selectedWard,
+                      items: (wardMap[selectedLGA] ?? []).map((String ward) {
+                        return DropdownMenuItem<String>(
+                          value: ward,
+                          child: Text(ward),
+                        );
+                      }).toList(),
+                      hint: const Text('Select Ward'),
+                      onChanged: (ward) =>
+                          setState(() => selectedWard = ward ?? ''),
+                      decoration: InputDecoration(
+                        labelText: 'Ward',
+                        prefixIcon: const Icon(Icons.map, size: 20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.deepPurple,
+                            width: 2,
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Reset Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _resetFilter,
+                        icon: const Icon(Icons.clear_all, size: 20),
+                        label: const Text(
+                          'Reset Filters',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            )
-          ],
-        ),
-      ),
-      */
+            ),
+            const SizedBox(height: 16),
 
-      body: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Column(
-          children: [
-            // UI for LGA and Ward filters
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedLGA.isEmpty ? null : selectedLGA,
-                    items: (lgaMap[adminState] ?? []).map((String lga) {
-                      return DropdownMenuItem<String>(
-                        value: lga,
-                        child: Text(lga),
-                      );
-                    }).toList(),
-                    hint: const Text('Select LGA'),
-                    onChanged: _onLGAChanged,
-                    padding: const EdgeInsets.all(10.0),
-                    decoration: const InputDecoration(
-                      labelText: 'LGA',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10))),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedWard.isEmpty ? null : selectedWard,
-                    items: (wardMap[selectedLGA] ?? []).map((String ward) {
-                      return DropdownMenuItem<String>(
-                        value: ward,
-                        child: Text(ward),
-                      );
-                    }).toList(),
-                    hint: const Text('Select Ward'),
-                    onChanged: (ward) =>
-                        setState(() => selectedWard = ward ?? ''),
-                    padding: const EdgeInsets.all(10.0),
-                    decoration: const InputDecoration(
-                      labelText: 'Ward',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10))),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            GestureDetector(
-              onTap: _resetFilter,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(15),
-                  ),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.all(10.0),
-                  child: Center(
-                    child: Text(
-                      'Reset Filter',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            //list of stakeholder come in here
-            const SizedBox(
-              height: 10,
-            ),
+            // Stakeholders List
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: _getFilteredStakeholders(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.deepPurple,
+                      ),
+                    );
                   }
                   if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red.shade300,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error: ${snapshot.error}',
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    );
                   }
 
                   final stakeholders = snapshot.data!.docs;
+
+                  if (stakeholders.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurple.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.people_outline,
+                              size: 64,
+                              color: Colors.deepPurple.shade300,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'No Stakeholders Found',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Try adjusting your filters or add new stakeholders',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
                   return ListView.builder(
                     itemCount: stakeholders.length,
@@ -1243,51 +1281,159 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           stakeholder['fullName'] ?? 'No Name';
                       final stakeholderId = stakeholders[index].id;
 
-                      return InkWell(
-                        onTap: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => AdminStakeholderViewScreen(
-                                    stakeholder: stakeholder,
-                                    stakeholderId: '',
-                                    stakeholderData: {},
-                                  )));
-                        },
-                        child: Card(
-                          color: Colors.white70,
-                          elevation: 0,
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    AdminStakeholderViewScreen(
+                                  stakeholder: stakeholder,
+                                  stakeholderId: stakeholderId,
+                                  stakeholderData: stakeholder,
+                                ),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(16),
                           child: Padding(
-                            padding: const EdgeInsets.all(5.0),
-                            child: ListTile(
-                              title: Text(stakeholderName),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                      'State: ${stakeholder['state'] ?? 'State'}'),
-                                  Text('LGA: ${stakeholder['lg'] ?? 'No LGA'}'),
-                                  Text(
-                                      'Ward: ${stakeholder['ward'] ?? 'Ward'}'),
-                                ],
-                              ),
-                              trailing: PopupMenuButton<String>(
-                                color: Colors.white,
-                                onSelected: (value) {
-                                  if (value == 'Edit') {
-                                    // Edit function here
-                                    _editStakeholder(
-                                        stakeholderId, stakeholder);
-                                  } else if (value == 'Delete') {
-                                    _deleteStakeholder(stakeholderId);
-                                  }
-                                },
-                                itemBuilder: (BuildContext context) =>
-                                    <PopupMenuEntry<String>>[
-                                  const PopupMenuItem<String>(
-                                      value: 'Edit', child: Text('Edit')),
-                                  const PopupMenuItem<String>(
-                                      value: 'Delete', child: Text('Delete')),
-                                ],
-                              ),
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.deepPurple.shade300,
+                                        Colors.deepPurple.shade600
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      stakeholderName.isNotEmpty
+                                          ? stakeholderName[0].toUpperCase()
+                                          : 'S',
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        stakeholderName,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.location_on_rounded,
+                                              size: 14,
+                                              color: Colors.grey[500]),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              '${stakeholder['lg'] ?? 'No LGA'}, ${stakeholder['ward'] ?? 'Ward'}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey[600],
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.business,
+                                              size: 14,
+                                              color: Colors.grey[500]),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              stakeholder['association'] ??
+                                                  'No Association',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey[500],
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                PopupMenuButton<String>(
+                                  icon: Icon(Icons.more_vert,
+                                      color: Colors.grey[600]),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  onSelected: (value) {
+                                    if (value == 'Edit') {
+                                      _editStakeholder(
+                                          stakeholderId, stakeholder);
+                                    } else if (value == 'Delete') {
+                                      _deleteStakeholder(stakeholderId);
+                                    }
+                                  },
+                                  itemBuilder: (BuildContext context) =>
+                                      <PopupMenuEntry<String>>[
+                                    const PopupMenuItem<String>(
+                                      value: 'Edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit,
+                                              size: 20, color: Colors.blue),
+                                          SizedBox(width: 12),
+                                          Text('Edit'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem<String>(
+                                      value: 'Delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.delete,
+                                              size: 20, color: Colors.red),
+                                          SizedBox(width: 12),
+                                          Text('Delete'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
                         ),

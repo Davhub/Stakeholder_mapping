@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mapping/component/user_form.dart';
+import 'package:mapping/component/auth_form.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
