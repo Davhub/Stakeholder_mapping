@@ -1,0 +1,143 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to get user role
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function getUserState() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.state;
+    }
+    
+    // Stakeholders - state-scoped access
+    match /stakeholders/{stakeholderId} {
+      allow read: if request.auth != null && 
+                     getUserState() == resource.data.state;
+      
+      allow create: if request.auth != null && 
+                       getUserRole() == 'Admin' &&
+                       request.resource.data.state == getUserState();
+      
+      allow update: if request.auth != null && 
+                       getUserRole() == 'Admin' &&
+                       resource.data.state == getUserState();
+      
+      allow delete: if request.auth != null && 
+                       getUserRole() == 'Admin' &&
+                       resource.data.state == getUserState();
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Managed by admin only
+    }
+    
+    // Roles - admin only
+    match /roles/{roleId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && 
+                       getUserRole() == 'Super Admin';
+      allow update: if request.auth != null && 
+                       getUserRole() == 'Super Admin';
+      allow delete: if request.auth != null && 
+                       getUserRole() == 'Super Admin' &&
+                       !resource.data.isSystemRole;
+    }
+    
+    // Audit logs - append-only, read by authorized users
+    match /audit_logs/{auditLogId} {
+      allow read: if request.auth != null && 
+                     (getUserRole() == 'Super Admin' ||
+                      getUserRole() == 'Admin' ||
+                      getUserRole() == 'Analyst');
+      allow create: if request.auth != null;
+      allow update, delete: if false; // Immutable audit trail
+    }
+    
+    // Activity events - tracking data, read by analysts
+    match /activity_events/{eventId} {
+      allow read: if request.auth != null && 
+                     (getUserRole() == 'Super Admin' ||
+                      getUserRole() == 'Admin' ||
+                      getUserRole() == 'Analyst');
+      allow create: if request.auth != null;
+      allow update, delete: if false; // Immutable event trail
+    }
+    
+    // User sessions - tracking data
+    match /user_sessions/{sessionId} {
+      allow read: if request.auth != null && 
+                     (getUserRole() == 'Super Admin' ||
+                      getUserRole() == 'Admin' ||
+                      getUserRole() == 'Analyst');
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+                       request.auth.uid == resource.data.userId;
+      allow delete: if false;
+    }
+    
+    // Reports - managed by authorized users
+    match /reports/{reportId} {
+      allow read: if request.auth != null && 
+                     (getUserRole() == 'Super Admin' ||
+                      getUserRole() == 'Admin' ||
+                      getUserRole() == 'Analyst');
+      allow create: if request.auth != null && 
+                       (getUserRole() == 'Super Admin' ||
+                        getUserRole() == 'Admin' ||
+                        getUserRole() == 'Analyst');
+      allow update: if request.auth != null && 
+                       (getUserRole() == 'Super Admin' ||
+                        getUserRole() == 'Admin' ||
+                        getUserRole() == 'Analyst');
+      allow delete: if request.auth != null && 
+                       (getUserRole() == 'Super Admin' ||
+                        getUserRole() == 'Admin');
+    }
+    
+    // Generated reports - export artifacts
+    match /generated_reports/{reportId} {
+      allow read: if request.auth != null && 
+                     (getUserRole() == 'Super Admin' ||
+                      getUserRole() == 'Admin' ||
+                      getUserRole() == 'Analyst');
+      allow create: if request.auth != null && 
+                       (getUserRole() == 'Super Admin' ||
+                        getUserRole() == 'Admin' ||
+                        getUserRole() == 'Analyst');
+      allow delete: if request.auth != null && 
+                       (getUserRole() == 'Super Admin' ||
+                        getUserRole() == 'Admin');
+    }
+    
+    // Report schedules - recurring report configuration
+    match /report_schedules/{scheduleId} {
+      allow read: if request.auth != null && 
+                     (getUserRole() == 'Super Admin' ||
+                      getUserRole() == 'Admin');
+      allow create: if request.auth != null && 
+                       (getUserRole() == 'Super Admin' ||
+                        getUserRole() == 'Admin');
+      allow update: if request.auth != null && 
+                       (getUserRole() == 'Super Admin' ||
+                        getUserRole() == 'Admin');
+      allow delete: if request.auth != null && 
+                       (getUserRole() == 'Super Admin' ||
+                        getUserRole() == 'Admin');
+    }
+
+    // Favorites - user-specific bookmarks
+    match /favorites/{favoriteId} {
+      allow read: if request.auth != null && 
+                     request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.userId;
+      allow update: if false; // Favorites are immutable
+      allow delete: if request.auth != null && 
+                       request.auth.uid == resource.data.userId;
+    }
+  }
+}
