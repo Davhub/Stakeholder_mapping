@@ -32,7 +32,10 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false; // Managed by admin only
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && 
+                       (request.auth.uid == userId || getUserRole() == 'Super Admin');
+      allow delete: if request.auth != null && getUserRole() == 'Super Admin';
     }
     
     // Roles - admin only

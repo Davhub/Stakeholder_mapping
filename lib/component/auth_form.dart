@@ -27,6 +27,10 @@ class _AuthScreenState extends State<AuthScreen> {
   List<String> _states = [
     'Lagos',
     'Oyo',
+    'Ogun',
+    'Osun',
+    'Ekiti',
+    'Ondo',
   ]; // Example states
   String? _selectedState;
 
@@ -47,12 +51,39 @@ class _AuthScreenState extends State<AuthScreen> {
             email: _email!,
             password: _password!,
           );
+          // Fetch user data to ensure it's available in the app
+          await _firestore
+              .collection('users')
+              .doc(userCredential.user?.uid)
+              .get()
+              .then((doc) {
+            if (doc.exists) {
+              debugPrint('User data found in Firestore: ${doc.data()}');
+            } else {
+              debugPrint('User document does not exist, creating it...');
+              // Create user document if it doesn't exist (fallback)
+              _firestore
+                  .collection('users')
+                  .doc(userCredential.user?.uid)
+                  .set({
+                'email': _email!,
+                'state': 'Lagos', // Default state
+                'role': 'User',
+              });
+            }
+          });
           _checkUserRole(userCredential.user?.uid);
         } else {
           // Registration logic
           if (_password != _confirmPassword) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Passwords do not match')),
+            );
+            return;
+          }
+          if (_selectedState == null || _selectedState!.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please select a state')),
             );
             return;
           }
@@ -69,7 +100,9 @@ class _AuthScreenState extends State<AuthScreen> {
             'password': _password!,
             'state': _selectedState!, // Save the selected state
             'role': 'User', // Default role is 'User'
+            'createdAt': DateTime.now(),
           });
+          debugPrint('User registered: $_email with state: $_selectedState');
           _checkUserRole(userCredential.user?.uid);
         }
 
