@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
+import 'package:risdi/core/utils/location_utils.dart';
 
 part 'stakeholder_contact_model.g.dart'; // This is needed for the generated code
 
@@ -50,6 +51,12 @@ class Stakeholder extends HiveObject {
   // Factory constructor to create a Stakeholder object from Firestore
   factory Stakeholder.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    String readField(Map<String, dynamic> map, List<String> keys) {
+      for (final k in keys) {
+        if (map.containsKey(k) && map[k] != null) return map[k].toString();
+      }
+      return '';
+    }
 
     return Stakeholder(
       fullName: _sanitizeField(data['fullName']),
@@ -60,8 +67,8 @@ class Stakeholder extends HiveObject {
       levelOfAdministration: _sanitizeField(data['levelOfAdministration']),
       country: _sanitizeField(data['country']),
       state: _sanitizeField(data['state']),
-      lg: _sanitizeField(data['lg']),
-      ward: _sanitizeField(data['ward']),
+      lg: LocationUtils.normalizeDisplay(readField(data, ['lg', 'LGA', 'lga'])),
+      ward: LocationUtils.normalizeDisplay(readField(data, ['ward', 'Ward'])),
     );
   }
 

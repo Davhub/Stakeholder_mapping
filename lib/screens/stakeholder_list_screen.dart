@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:risdi/model/model.dart';
 import 'package:risdi/screens/stakeholder_view.dart';
 import 'package:risdi/services/stakeholder_cache_service.dart';
+import 'package:risdi/services/location_service.dart';
 import 'package:risdi/model/stakeholder_contact_model.dart';
 
 class StakeholderListScreen extends StatefulWidget {
@@ -29,6 +30,7 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
   bool isLoading = true;
   String? userState;
   late StakeholderCacheService _cacheService;
+  late LocationService _locationService;
 
   final TextEditingController searchController = TextEditingController();
 
@@ -36,7 +38,9 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
   void initState() {
     super.initState();
     _cacheService = StakeholderCacheService();
-    _initializeData();
+     _locationService = LocationService();
+     _initializeLocationService();
+     _initializeData();
   }
 
   @override
@@ -140,6 +144,19 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
     }
   }
 
+  Future<void> _initializeLocationService() async {
+    try {
+      await _locationService.initialize();
+      debugPrint('LocationService initialized in StakeholderListScreen');
+    } catch (e) {
+      debugPrint('Error initializing LocationService: $e');
+    }
+  }
+
+  String? _getCurrentUserState() {
+    return userState;
+  }
+
   void _applyFilters() {
     setState(() {
       // Use cache service's optimized search method for instant results
@@ -173,17 +190,29 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
   }
 
   List<String> _getUniqueLGAs() {
-    // Get unique LGAs from cached stakeholders
-    final lgas =
-        _cacheService.getAllStakeholders().map((s) => s.lg).toSet().toList();
+    // Use LocationService instead of cache for dynamic LGA data from Firestore
+    if (_locationService.isInitialized) {
+      final state = _getCurrentUserState();
+      if (state != null) {
+        return _locationService.getCachedLGAsForState(state);
+      }
+    }
+    // Fallback to cache if LocationService not available
+    final lgas = _cacheService.getAllStakeholders().map((s) => s.lg).toSet().toList();
     lgas.sort();
     return lgas;
   }
 
   List<String> _getUniqueWards() {
-    // Get unique Wards from cached stakeholders
-    final wards =
-        _cacheService.getAllStakeholders().map((s) => s.ward).toSet().toList();
+    // Use LocationService instead of cache for dynamic ward data from Firestore
+    if (_locationService.isInitialized && selectedLGA != null) {
+      final state = _getCurrentUserState();
+      if (state != null) {
+        return _locationService.getCachedWardsForLGA(state, selectedLGA!);
+      }
+    }
+    // Fallback to cache if LocationService not available
+    final wards = _cacheService.getAllStakeholders().map((s) => s.ward).toSet().toList();
     wards.sort();
     return wards;
   }
@@ -543,7 +572,13 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
   }
 
   void _showLGAFilterDialog() {
-    final lgas = _getUniqueLGAs();
+    _showLGAFilterDialogInternal();
+  }
+
+  Future<void> _showLGAFilterDialogInternal() async {
+    final state = _getCurrentUserState() ?? 'Lagos';
+    await _locationService.ensureLGAsLoadedForState(state);
+    final lgas = _locationService.getCachedLGAsForState(state);
 
     showDialog(
       context: context,
@@ -611,7 +646,25 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
   }
 
   void _showWardFilterDialog() {
-    final wards = _getUniqueWards();
+    _showWardFilterDialogInternal();
+  }
+
+  Future<void> _showWardFilterDialogInternal() async {
+    final state = _getCurrentUserState() ?? 'Lagos';
+    List<String> wards = [];
+
+    if (selectedLGA != null) {
+      await _locationService.ensureWardsLoadedForLGA(state, selectedLGA!);
+      wards = _locationService.getCachedWardsForLGA(state, selectedLGA!);
+    } else {
+      // If no LGA selected, fetch all LGAs and wards and flatten
+      final all = await _location_service_getAllLGAsAndWardsSafe(state);
+      final wardSet = <String>{};
+      for (var w in all.values) {
+        wardSet.addAll(w);
+      }
+      wards = wardSet.toList()..sort();
+    }
 
     showDialog(
       context: context,
@@ -676,5 +729,16 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
         ],
       ),
     );
+  }
+
+  // Helper to safely call LocationService.getAllLGAsAndWardsForState
+  Future<Map<String, List<String>>> _location_service_getAllLGAsAndWardsSafe(String state) async {
+    try {
+      final map = await _locationService.getAllLGAsAndWardsForState(state);
+      return map;
+    } catch (e) {
+      debugPrint('Error fetching all LGAs and wards: $e');
+      return {};
+    }
   }
 }

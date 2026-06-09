@@ -8,6 +8,8 @@ import 'package:risdi/model/model.dart';
 import 'package:risdi/screens/stakeholder_view.dart';
 import 'package:risdi/services/stakeholder_cache_service.dart';
 import 'package:risdi/services/app_state_service.dart';
+import 'package:risdi/services/location_service.dart';
+import 'package:risdi/core/utils/location_utils.dart';
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -18,6 +20,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late StakeholderCacheService _cacheService;
   late AppStateService _appStateService;
+  late LocationService _locationService;
   Box<Stakeholder>? stakeholderBox;
   List<Stakeholder> allStakeholders = [];
   List<Stakeholder> filteredStakeholders = [];
@@ -31,818 +34,95 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<String> lgs = [];
   List<String> wards = [];
-
+  bool isLoadingLGAs = false;
+  bool isLoadingWards = false;
+  String? lgaLoadError;
+  String? wardLoadError;
   // Search functionality
   final TextEditingController _searchController = TextEditingController();
   List<Stakeholder> searchResults = [];
 
-  Map<String, List<String>> lgaMap = {
-    'Lagos': [
-      'Agege',
-      'Ajeromi-Ifelodun',
-      'Alimosho',
-      'Amuwo-Odofin',
-      'Apapa',
-      'Badagry',
-      'Epe',
-      'Eti-Osa',
-      'Ibeju-Lekki',
-      'Ifako-Ijaiye',
-      'Ikeja',
-      'Ikorodu',
-      'Kosofe',
-      'Lagos Island',
-      'Lagos Mainland',
-      'Mushin',
-      'Ojo',
-      'Oshodi-Isolo',
-      'Somolu',
-      'Surulere',
-    ],
-    'Oyo': [
-      'Afijio',
-      'Akinyele',
-      'Atiba',
-      'Atisbo',
-      'Egbeda',
-      'Ibadan North',
-      'Ibadan North-East',
-      'Ibadan North-West',
-      'Ibadan South-East',
-      'Ibadan South-West',
-      'Ibarapa Central',
-      'Ibarapa East',
-      'Ibarapa North',
-      'Ido LGA',
-      'Irepo',
-      'Iseyin',
-      'Itesiwaju',
-      'Iwajowa',
-      'Kajola',
-      'Lagelu',
-      'Ogbomosho North',
-      'Ogbomosho South',
-      'Ogo Oluwa',
-      'Olorunsogo',
-      'Oluyole',
-      'Ona-Ara',
-      'Orelope',
-      'Ori-Ire',
-      'Oyo East',
-      'Oyo West',
-      'Saki East',
-      'Saki West',
-      'Surulere (Oyo)',
-    ]
-  };
-
-  Map<String, List<String>> wardMap = {
-    'Agege': [
-      'Isale-Oja/Idi-Mangoro',
-      'Iloro/Onipetesi',
-      'Oniwaya/Papauku',
-      'Agbotikuyo/Dopemu',
-      'Okekoto',
-      'Keke',
-      'Darocha',
-      'Tabon-Tabon/Oko-Oba',
-    ],
-    'Ajeromi-Ifelodun': [
-      'Awodi-Ora',
-      'Ojo Road',
-      'Layeni',
-      'Alaba Oro',
-      'Mosafejo',
-      'Ago Hausa',
-      'Wilmer',
-      'Olodi',
-      'Tolu',
-      'Temidire I',
-    ],
-    'Alimosho': [
-      'Shasha/Akowonjo',
-      'Egbeda/Alimosho',
-      'Ipaja North',
-      'Ipaja South',
-      'Ayobo/Ijon',
-      'Oke-Odo/Pleasure',
-      'Abule-Egba/Alagbado',
-      'Idimu/Isheri',
-      'Ikotun/Ijegun',
-      'Egbe/Agodo',
-      'Igando/Egan',
-    ],
-    'Amuwo-Odofin': [
-      'Amuwo Odofin Housing Estate',
-      'Festac I',
-      'Festac II',
-      'Festac III',
-      'Kirikiri',
-      'Satellite',
-      'Agboju',
-      'Ijegun',
-      'Iyagbe',
-      'Ibeshe',
-      'Igbologun',
-    ],
-    'Apapa': [
-      'Apapa I',
-      'Apapa II',
-      'Apapa III',
-      'Apapa IV',
-      'Afolabi Alasia Street',
-      'Ijora-Oloye',
-      'Gaskiya',
-      'Iganmu',
-      'Malu Road',
-    ],
-    'Badagry': [
-      'Posukoh',
-      'Awhanjigoh',
-      'Apa Group',
-      'Keta-East Group',
-      'Iworo-Gbanko Group',
-      'Ajido Group',
-      'Ibereko Group',
-      'Araromi/Ilogbo Group',
-      'Ikoga Group',
-      'Ajara Group',
-      'Iyafin Group',
-    ],
-    'Epe': [
-      'Ajaganabe',
-      'Etita Ebode',
-      'Ise/Igbogun',
-      'Lagbade',
-      'Oke-Balogun',
-      'Popo-Oba',
-      'Oriba/Ladaba',
-      'Abomiti',
-      'Agbowa',
-      'Agbowa-Ikosi',
-      'Ago-owu',
-      'Ejirin',
-      'Ibonwon',
-      'Ilara',
-      'Itoikin',
-      'Odomola',
-      'Odoragunsin',
-      'Orugbo',
-      'Poka',
-    ],
-    'Eti-Osa': [
-      'Victoria Island II',
-      'Ilasan Housing Estate/Maiyegun',
-      'Ikota/Ikate Village',
-      'Igbo-Efon/Ikota Housing Estate',
-      'Ajah Village',
-      'Addo Village',
-      'Victoria I',
-      'Ikoyi I',
-      'Ikoyi II',
-      'Obalende',
-    ],
-    'Ibeju-Lekki': [
-      'Ibeju I',
-      'Ibeju II',
-      'Iwerekun I',
-      'Iwerekun II',
-      'Lekki I',
-      'Lekki II',
-      'Orimedu I',
-      'Orimedu II',
-      'Orimedu III',
-      'Siriwon/Igbekodo I',
-      'Siriwon/Igbekodo II',
-    ],
-    'Ifako-Ijaiye': [
-      'Fagba/Akute',
-      'Iju Isaga',
-      'New Ifako/Oyemekun',
-      'Old Ifako/Karaole',
-      'Obawole',
-      'Ogba/Oke-Ira',
-      'Alakuko/Kollington',
-      'Ijaiye/Agbado',
-      'Ijaiye/Ojokoro',
-      'Ijegun/Akinade',
-      'Pamada/Abule-Egba',
-    ],
-    'Ikeja': [
-      'Airport/Onipetesi/Inilekere',
-      'Alausa/Oregun/Olusosun',
-      'Anifowoshe/Ikeja',
-      'Ipodo/Seriki Aro',
-      'Ojodu/Agidingbi/Omole',
-      'Adekunle/Adeniyi Jones/Ogba',
-      'GRA/Police Barracks',
-      'Oke Ira/Aguda',
-      'Onigbongbon',
-      'Wasimi/Opebi/Allen',
-    ],
-    'Ikorodu': [
-      'Isele I',
-      'Isele II',
-      'Isele III',
-      'Aga/Ijomu',
-      'Ipakodo',
-      'Isiu',
-      'Agura/Iponmi',
-      'Odogunyan',
-      'Erikorodo',
-      'Agbala',
-      'Olorunda/Igbala',
-      'Imota I',
-      'Imota II',
-      'Igbogbo I',
-      'Igbogbo II',
-      'Baiyeku/Oreta',
-      'Ibeshe',
-      'Ijede I',
-      'Ijede II',
-    ],
-    'Kosofe': [
-      'Oworonshoki',
-      'Ifako',
-      'Anthony/Mende',
-      'Ojota/Ogudu',
-      'Ketu/Alapere',
-      'Ketu/Ikosi',
-      'Isheri/Olowo-ira',
-      'Agboyi I',
-      'Agboyi II',
-      'Ajegunle',
-    ],
-    'Lagos Island': [
-      'Olowogbowo/Elegbata',
-      'Oluwole',
-      'Idumota',
-      'Oju –Oto/Isale Eko',
-      'Idumagbo/Oko-Awo',
-      'Agarawu/Obadina',
-      'Iduntafa',
-      'Ilupesi',
-      'Isale-Agbede',
-      'Olosun',
-      'Olushi/Kakawa',
-      'Popo-Aguda',
-      'Anikantamo',
-      'Oko- faji',
-      'Eiyekole',
-      'Onikan/Okesuna',
-      'Sandgrouse',
-      'Epetedo',
-      'Ilubirin/Lafiaji',
-    ],
-    'Lagos Mainland': [
-      'Otto/Iddo',
-      'Apapa road and environs',
-      'Olaleye village',
-      'Makoko/Ebute-Metta,'
-          'Oyingbo Market/Ebute-Metta',
-      'Glover/Ebute Metta',
-      'Oko-Baba',
-      'Oyadiran/Estate/Abule-Oja',
-      'Alagomeji',
-      'Iwaya',
-      'Yaba/Igbobi-Sabi',
-    ],
-    'Mushin': [
-      'Alakara',
-      'Idi-oro/Odi-olowo',
-      'Babalosa',
-      'Ojuwoye',
-      'Ilupeju',
-      'Olateju',
-      'Kayode/Fadeyi',
-      'Ilupeju/Industrial',
-      'Mushin/Atewolara',
-      'Papa Ajao',
-      'Ilasamaja',
-      'Babalosa/Idi-Araba',
-      'Itire',
-      'Idi-Araba',
-    ],
-    'Ojo': [
-      'Ojo',
-      'Okoko',
-      'Ajangbadi',
-      'Iba',
-      'Sabo/Alaba',
-      'Ijanikin',
-      'Otto/Ilogbo',
-      'Irewe',
-      'Taffi',
-      'Etegbin',
-      'Idoluwo',
-    ],
-    'Oshodi-Isolo': [
-      'Oshodi-Bolade',
-      'Orile-Oshodi',
-      'Mafoluku',
-      'Shogunle',
-      'Alasia/Shogunle',
-      'Isolo',
-      'Ajao Estate',
-      'Ilasamaja',
-      'Okota',
-      'Ishagatedo',
-      'Oke-Afa/Ejigbo',
-    ],
-    'Shomolu': [
-      'Onipanu',
-      'Palm grove/Ijebutedo',
-      'Alade',
-      'Bajulaiye',
-      'Igbobi/Fadeyi',
-      'Folagoro/Bajulaiye/Igbari',
-      'Mafoloku/Pedro',
-      'Bariga',
-      'Ilaje/Akoka',
-      'Gbagada Phase I/Obanikoro',
-      'Gbagada Phase II/Apelehin',
-      'Abule Okuta/Ilaje/Bariga',
-    ],
-    'Surulere': [
-      'Akinhanmi/Cole',
-      'Yaba/Ojuelegba',
-      'Gbaja/Stadium',
-      'Shitta/Ogunlana',
-      'Adeniran Ogunsanya',
-      'Iponrin Housing Estate/Eric Moore',
-      'Orile',
-      'Coker',
-      'Aguda',
-      'Ijeshatedo',
-      'Itire',
-      'Ikate',
-    ],
-
-    //oyo lga Wards
-    'Afijio': [
-      'Ilora I',
-      'Ilora II',
-      'Ilora III',
-      'Fiditi I',
-      'Fiditi II',
-      'Aawe I',
-      'Aawe II',
-      'Akinmorin/Jobele',
-      'Iware',
-      'Imini',
-    ],
-
-    'Akinyele': [
-      'Ikereku',
-      'Olanla/Oboda/Labode',
-      'Arulogun/Eniosa/Aroro',
-      'Olode/Amosun/Onidundu',
-      'Ojo-Emo/Moniya',
-      'Akinyele/Isabiyi/Irepodun',
-      'Iwokoto/Talonta/Idi-oro',
-      'Ojoo/Ajibode/Laniba',
-      'Ijaye/Ojedeji',
-      'Ajibade/Alabata/Elekuru',
-      'Olorisa-Oko/Okegbemi/Mele',
-      'Iroko',
-    ],
-
-    'Atiba': [
-      'Agunpopo I',
-      'Agunpopo II',
-      'Agunpopo III',
-      'Aremo',
-      'Ashipa I',
-      'Ashipa II',
-      'Ashipa III',
-      'Bashorun',
-      'Oke-afin I',
-      'Oke-afin II',
-    ],
-
-    'Atisbo': [
-      'Ago Are I',
-      'Ago Are Ii',
-      'Alaga',
-      'Basi',
-      'Irawo Ile',
-      'Irawo Owode',
-      'Ofiki',
-      'Owo/agunrege/sabe',
-      'Tede I',
-      'Tede II',
-    ],
-
-    'Egbeda': [
-      'Ayede/alugbo/koloko',
-      'Egbeda',
-      'Erunmu',
-      'Olodan/ajinogbo',
-      'Olode/alakia',
-      'Olodo/Kumapayi I',
-      'Olodo II',
-      'Olodo III',
-      'Olubadan Estate',
-      'Osegere/awaye',
-      'Owobaale/kasumu',
-    ],
-
-    'Ibadan North': [
-      'Ward I N2',
-      'Ward II N3',
-      'Ward III N4',
-      'Ward IV N5a',
-      'Ward V N5b',
-      'WARD VI, N6A PART I',
-      'WARD VII, N6A PART II',
-      'WARD VIII, N6A PART III',
-      'WARD IX, N6B PART I',
-      'WARD X, N6B PART II',
-      'WARD XI, NW8',
-      'WARD XII, NW8',
-    ],
-
-    'Ibadan North East': [
-      'WARD I EI',
-      'WARD II NI (PART II)',
-      'WARD III E3',
-      'WARD IV  E4',
-      'WARD V E5A',
-      'WARD VI E5B',
-      'WARD VII E6',
-      'WARD VIII E7 I',
-      'WARD IX E7II',
-      'WARD X  E8',
-      'WARD XI  E9 I',
-      'WARD XII  E9 II',
-    ],
-
-    'Ibadan North West': [
-      'WARD 1 N1 (PART I)',
-      'WARD 2 N1 (PART II)',
-      'WARD 3 NW1',
-      'WARD 4 NW2',
-      'WARD 5 NW3 (PART I)',
-      'WARD 6 NW3 (PART I)',
-      'WARD 7 NW4',
-      'WARD 8 NW5',
-      'WARD 9 NW6',
-      'WARD 10 NW7',
-      'WARD 11 NW7',
-    ],
-
-    'Ibadan South West': [
-      'WARD 1 C2',
-      'WARD 2 SW 1',
-      'WARD 3 SW2',
-      'WARD 4 SW3A & 3B',
-      'WARD 5 SW4',
-      'WARD 6  SW5',
-      'WARD 7  SW6',
-      'WARD 8 SW7',
-      'WARD 9 SW8 (I)',
-      'WARD 10 SW8 II',
-      'WARD 11 SW9 (I)',
-      'WARD 12 SW9 (II)',
-    ],
-
-    'Ibadan South-East': [
-      'CI',
-      'S 1',
-      'S 2A',
-      'S 2B',
-      'S 3',
-      'S 4A',
-      'S 4B',
-      'S S5',
-      'S 6A',
-      'S 6B',
-      'S 7A',
-      'S 7B',
-    ],
-
-    'Ibarapa Central': [
-      'IDERE I (MOLETE)',
-      'IDERE II (OMINIGBO/OKE ‐ OBA)',
-      'IDERE III (KOSO/APA)',
-      'IBEREKODO I /(PATAOJU)',
-      'IBEREKODO/AGBOORO/ITA BAALE',
-      'IDOFIN ISAGANUN',
-      'IGBOLE/PAKO',
-      'ISALE‐OBA',
-      'OKESERIN I & II',
-      'OKE‐ODO',
-    ],
-
-    'Ibarapa East': [
-      'OKE ‐OBA',
-      'ANKO',
-      'ISABA',
-      'ABORERIN',
-      'NEW ERUWA',
-      'SANGO',
-      'OKE‐IMALE',
-      'ISALE TOGUN',
-      'OKE OTUN',
-      'ITABO',
-    ],
-
-    'Ibarapa North': [
-      'AYETE I',
-      'AYETE II',
-      'IGANGAN I',
-      'IGANGAN II',
-      'IGANGAN III',
-      'IGANGAN IV',
-      'OFIKI I',
-      'OFIKI II',
-      'TAPA I',
-      'TAPA II',
-    ],
-
-    'Ido': [
-      'ABA EMO/ILAJU/ALAKO',
-      'AKUFO/IDIGBA/ARAROMI',
-      'AKINWARE/AKINDELE',
-      'APETE/AYEGUN/AWOTAN',
-      'BATAKE/IDI‐IYA',
-      'ERINWUSI/KOGUO/ODETOLA',
-      'FENWA/OGANLA/ELENUSONSO',
-      'IDO/ONIKEDE/OKUNA AWO',
-      'OMI ADIO/OMI ONIGBAGBO BAKATARI',
-      'OGUNDELE/ALAHO/SIBA/IDI‐AHUN',
-    ],
-
-    'Irepo': [
-      'AGORO',
-      'AJAGUNNA',
-      'ATIPA',
-      'IBA I',
-      'IBA II',
-      'IBA III',
-      'IBA IV',
-      'IBA V',
-      'IKOLABA',
-      'LAHA/AJANA',
-    ],
-
-    'Iseyin': [
-      'ADO‐AWAYE',
-      'AKINWUMI/OSOOGUN',
-      'EKUNLE I',
-      'EKUNLE II',
-      'FARAMORA',
-      'IJEMBA/OKE‐OLA/OKE‐OJA',
-      'ISALU I'
-          'ISALU II',
-      'KOSO I',
-      'KOSO II',
-      'LADOGAN/OKE EYIN',
-    ],
-
-    'Itesiwaju': [
-      'BABAODE',
-      'IGBOJAIYE',
-      'IPAPO',
-      'KOMU',
-      'OKAKA I',
-      'OKAKA II',
-      'OKE‐AMU',
-      'OTU I',
-      'OTU II',
-      'OWODE/IPAPO',
-    ],
-
-    'Iwajowa': [
-      'AGBAAKIN I',
-      'AGBAAKIN II',
-      'IWERE‐ILE I',
-      'IWERE‐ILE II',
-      'IWERE‐ILE III',
-      'IWERE‐ILE IV',
-      'SABI GANA I',
-      'SABI GANA II',
-      'SABI GANA III',
-      'SABI GANA IV',
-    ],
-
-    'Kajola': [
-      'AYETORO‐OKE I',
-      'ELERO',
-      'GBELEKALE I & II',
-      'IBA‐OGAN',
-      'IJO',
-      'ILAJI OKE/IWERE‐OKE',
-      'IMOBA/OKE‐OGUN',
-      'ISEMI‐ILE/IMIA/ILUA',
-      'ISIA',
-      'KAJOLA',
-      'OLELE',
-    ],
-
-    'Lagelu': [
-      'AJARA/OPEODU',
-      'APATERE/KUFFI/OGUNBODE/OGO',
-      'ARULOGUN EHIN/KELEBE'
-          'EJIOKU/IGBON/ARIKU',
-      'LAGELU MARKET/KAJOLA/GBENA',
-      'LAGUN',
-      'LALUPON I',
-      'LALUPON II',
-      'LALUPON III',
-      'OFA‐IGBO',
-      'OGUNJANA/OLOWODE/OGBURO',
-      'OGUNREMI/OGUNSINA',
-      'OYEDEJI/OLODE/KUTAYI',
-      'SAGBE/PABIEKUN',
-    ],
-
-    'Ogbomoso North': [
-      'ABOGUNDE',
-      'AAJE/OGUNBADO',
-      'AGUODO/ MASIFA',
-      'ISALE AFON',
-      'ISALE ALAASA',
-      'ISALE ORA/SAJA',
-      'JAGUN',
-      'OKELERIN',
-      'OSUPA',
-      'SABO/TARA',
-    ],
-
-    'Ogbomoso South': [
-      'AKATA',
-      'ALAPATA',
-      'AROWOMOLE',
-      'IBAPON',
-      'IJERU I',
-      'IJERU II',
-      'ILOGBO',
-      'ISOKO',
-      'LAGBEDU',
-      'OKE‐OLA/FARM SETTLEMENT',
-    ],
-
-    'Ogo-Oluwa': [
-      'AJAAWA I',
-      'AJAAWA II',
-      'AYEDE',
-      'AYETORO',
-      'IDEWURE',
-      'LAGBEDU',
-      'MOWOLOWO/IWO‐ATE',
-      'ODO‐OBA',
-      'OPETE',
-      'OTAMOKUN',
-    ],
-
-    'Olorunsogo': [
-      'ABOKE (ABOYUN OGUN)',
-      'ELERUGBA/ELEHINKE/SAGBO (APERU)',
-      'IKOLABA/OBADIMO',
-      'ONIGBETI I (IYAMOPO)',
-      'ONIGBETI II/SAGBON AGORO (SAGBON)',
-      'ONIGBETI III & IV (AGBENI)',
-      'OPA/OGUNNIYI',
-      'SERIKI I & ABOSINO (OKIN)',
-      'SERIKI II (AGBELE)',
-      'WARO/APATA‐ALAJE',
-    ],
-
-    'Oluyole': [
-      'AYEGUN',
-      'IDI‐IROKO/IKEREKU',
-      'IDI‐OSAN/EGBEDA‐ATUBA',
-      'MUSLIM/OGBERE',
-      'ODO‐ONA NLA',
-      'OKANHINDE/LATUNDE',
-      'OLOMI/OLURINDE',
-      'OLONDE/ABA‐NLA',
-      'ONIPE',
-      'ORISUNBARE/OJO‐EKUN',
-    ],
-
-    'Ona-Ara': [
-      'AKANRAN/OLORUNDA',
-      'ARAROMI/APERIN',
-      'BADEKU',
-      'GBADA EFON',
-      'ODI ODEYALE/ODI APERIN',
-      'OGBERE',
-      'OGBERE TIOYA',
-      'OJOKU/AJIA',
-      'OLORUNSOGO',
-      'OLODE/GBEDUN/OJEBODE',
-      'OREMEJI/AGUGU',
-    ],
-
-    'Orelope': [
-      'Aare',
-      'Alepata',
-      'Bonni',
-      'Igbope/Iyeye I',
-      'Igbope/Iyeye II',
-      'Igi Isubu',
-      'Onibode I',
-      'Onibode II',
-      'Onibode III',
-      'Onigboho/alomo/okere',
-    ],
-
-    'Ori Ire': [
-      'ORI IRE I',
-      'ORI IRE II',
-      'ORI IRE III',
-      'ORI IRE IV',
-      'ORI IRE V',
-      'ORI IRE VI',
-      'ORI IRE VII',
-      'ORI IRE VIII',
-      'ORI IRE IX',
-      'ORI IRE X',
-    ],
-
-    'Oyo East': [
-      'AGBOYE/MOLETE',
-      'AJAGBA',
-      'ALAODI/MODEKE',
-      'APAARA',
-      'APINNI',
-      'BALOGUN',
-      'JABATA',
-      'OKE APO',
-      'OLUAJO',
-      'OWODE/ARAROM',
-    ],
-
-    'Oyo West': [
-      'AKEETAN',
-      'AJOKIDERO/AKEWUGBERU',
-      'FASOLA/SOKU',
-      'ISEKE',
-      'ISOKUN I',
-      'ISOKUN II',
-      'IYAJI',
-      'OPAPA',
-      'OWODE',
-      'PAKOYI/IDODE',
-    ],
-
-    'Saki East': [
-      'AGBONLE',
-      'AGO AMODU I',
-      'AGO AMODU II',
-      'OGBOORO I',
-      'OGBOORO II',
-      'OJE OWODE I',
-      'OJE OWODE II',
-      'SEPETERI I',
-      'SEPETERI II',
-      'SEPETERI III',
-      'SEPETERI IV',
-    ],
-
-    'Saki West': [
-      'AGANMU/KOOKO',
-      'AJEGUNLE',
-      'BAGII',
-      'EKOKAN / IMUA',
-      'IYA',
-      'OGIDIGBO/KINNIKINNI',
-      'OKE‐ORO',
-      'OKERE I',
-      'OKERE II',
-      'SANGOTE/BOODA/BAABO/ILUA',
-      'SEPETERI/BAPON',
-    ],
-
-    'Surulere (Oyo)': [
-      'BAYA‐OJE',
-      'IGBON/GAMBARI',
-      'IRESAAPA',
-      'AROLU',
-      'IRESAADU',
-      'IREGBA',
-      'IWOFIN',
-      'OKO',
-      'ILAJUE',
-      'MAYIN',
-    ],
-  };
-
-  @override
   @override
   void initState() {
     super.initState();
     _cacheService = StakeholderCacheService();
     _appStateService = AppStateService();
     _appStateService.addListener(_onAppStateChanged);
+    _initializeLocationService();
+
 
     // Fetch user state first, then initialize data
     fetchCurrentUserState().then((_) {
       // After user state is fetched, initialize data
       initializeData();
     });
+  }
+
+  /// Initialize LocationService for dynamic location data from Firestore
+  Future<void> _initializeLocationService() async {
+    _locationService = LocationService();
+    try {
+      await _locationService.initialize();
+      debugPrint('LocationService initialized successfully');
+    } catch (e) {
+      debugPrint('Error initializing LocationService: $e');
+    }
+  }
+
+  /// Load LGAs for the specified state from Firestore
+  Future<void> _loadLGAsForState(String state) async {
+    if (state.isEmpty) return;
+    
+    setState(() {
+      isLoadingLGAs = true;
+      lgaLoadError = null;
+    });
+
+    try {
+      final lgas = await _locationService.getLGAsForState(state);
+      if (mounted) {
+        setState(() {
+          lgs = lgas;
+          isLoadingLGAs = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading LGAs: $e');
+      if (mounted) {
+        setState(() {
+          lgaLoadError = 'Failed to load LGAs: $e';
+          isLoadingLGAs = false;
+        });
+      }
+    }
+  }
+
+  /// Load wards for the specified LGA from Firestore
+  Future<void> _loadWardsForLGA(String state, String lga) async {
+    if (state.isEmpty || lga.isEmpty) return;
+    
+    setState(() {
+      isLoadingWards = true;
+      wardLoadError = null;
+    });
+
+    try {
+      final wardList = await _locationService.getWardsForLGA(state, lga);
+      if (mounted) {
+        setState(() {
+          wards = wardList;
+          isLoadingWards = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading wards: $e');
+      if (mounted) {
+        setState(() {
+          wardLoadError = 'Failed to load wards: $e';
+          isLoadingWards = false;
+        });
+      }
+    }
   }
 
   void _onAppStateChanged() {
@@ -866,6 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> fetchCurrentUserState() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
+      debugPrint('🔐 [AUTH] Current user UID: ${user?.uid}, email: ${user?.email}');
       if (user != null) {
         final docSnapshot = await FirebaseFirestore.instance
             .collection('users')
@@ -873,21 +154,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
             .get();
 
         if (docSnapshot.exists) {
-          currentUserState = docSnapshot.data()?['state'] as String?;
+          final userData = docSnapshot.data();
+          currentUserState = userData?['state'] as String?;
+          debugPrint('📍 [STATE] User document fields: ${userData?.keys.toList()}');
+          debugPrint('📍 [STATE] User state retrieved: "$currentUserState" (type: ${currentUserState.runtimeType}, length: ${(currentUserState ?? '').length})');
+          
           if (currentUserState != null) {
             // Only set listener if not already set
             if (firestoreSubscription == null) {
+              debugPrint('🔍 [FIRESTORE-SCOPE] Setting Firestore listener scoped to: "$currentUserState"');
               setFirestoreListener();
             }
           } else {
+            debugPrint('⚠️  [STATE-ERROR] State field is null for user ${user.uid}');
             setState(() {
               isLoading = false;
               errorMessage = 'State not found for the current user.';
             });
           }
+        } else {
+          debugPrint('⚠️  [STATE-ERROR] User document does not exist for UID: ${user.uid}');
         }
       }
     } catch (e) {
+      debugPrint('❌ [STATE-ERROR] Error fetching user state: $e');
       setState(() {
         isLoading = false;
         errorMessage = 'Error fetching user state: $e';
@@ -942,11 +232,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void setFirestoreListener() {
+    debugPrint('🔄 [FIRESTORE-QUERY] Setting up listener for state: $currentUserState');
     firestoreSubscription = FirebaseFirestore.instance
         .collection('stakeholders')
         .where('state', isEqualTo: currentUserState)
         .snapshots()
         .listen((snapshot) async {
+      debugPrint('📊 [FIRESTORE-DATA] Received ${snapshot.docs.length} stakeholders for state: $currentUserState');
       List<Stakeholder> fetchedStakeholders = snapshot.docs
           .map((doc) => Stakeholder.fromFirestore(
               doc as DocumentSnapshot<Map<String, dynamic>>))
@@ -978,31 +270,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void updateLgsAndWards() {
-    setState(() {
-      lgs = currentUserState != null && lgaMap.containsKey(currentUserState!)
-          ? lgaMap[currentUserState!]!
-          : [];
-      if (selectedLg != null && !lgs.contains(selectedLg)) {
-        selectedLg = null;
-      }
-
-      wards = selectedLg != null && wardMap.containsKey(selectedLg!)
-          ? wardMap[selectedLg!]!
-          : [];
-      if (selectedWard != null && !wards.contains(selectedWard)) {
-        selectedWard = null;
-      }
-    });
+    // Load LGAs from Firestore when current user state is available
+    if (currentUserState != null && currentUserState!.isNotEmpty) {
+      _loadLGAsForState(currentUserState!);
+    }
+    
+    // Reset wards if LG changed or is not available
+    if (selectedLg != null && !lgs.contains(selectedLg)) {
+      selectedLg = null;
+      wards = [];
+    }
   }
 
   void filterStakeholders() {
     setState(() {
       filteredStakeholders = allStakeholders.where((stakeholder) {
-        final matchesLg = selectedLg == null || stakeholder.lg == selectedLg;
-        final matchesWard =
-            selectedWard == null || stakeholder.ward == selectedWard;
+        final matchesLg = selectedLg == null ||
+            (stakeholder.lg.isNotEmpty && selectedLg != null &&
+                LocationUtils.equalsIgnoreCase(stakeholder.lg, selectedLg!));
+        final matchesWard = selectedWard == null ||
+            (stakeholder.ward.isNotEmpty && selectedWard != null &&
+                LocationUtils.equalsIgnoreCase(stakeholder.ward, selectedWard!));
         return matchesLg && matchesWard;
       }).toList();
+      debugPrint('🔍 [FILTER] Applied LGA: ${selectedLg ?? "none"}, Ward: ${selectedWard ?? "none"} => ${filteredStakeholders.length} results');
     });
   }
 
@@ -1093,6 +384,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ],
                     ),
+                  ),
+                  // Debug button for testing LocationService
+                  IconButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Debug Tests'),
+                          content: const Text(
+                            'Run diagnostic tests to check LocationService and cache?\n\n'
+                            'This will test:\n'
+                            '• Firestore wards collection access\n'
+                            '• LocationService functionality\n'
+                            '• Stakeholder queries\n'
+                            '• Hive cache contents\n\n'
+                            'Check console for results.'
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _runDiagnosticTests();
+                              },
+                              child: const Text('Run Tests'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.bug_report),
+                    tooltip: 'Run Debug Tests',
                   ),
                   IconButton(
                     onPressed: () {
@@ -1199,69 +525,120 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               const SizedBox(height: 20),
 
-              // Filter Section
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: selectedLg,
-                      hint: const Text('Select LGA'),
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      items: lgs.map((lg) {
-                        return DropdownMenuItem(
-                          value: lg,
-                          child: Text(
-                            lg,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedLg = value;
-                          updateLgsAndWards();
-                          filterStakeholders();
-                        });
-                      },
-                    ),
+              // Filter Section with Loading & Error States
+              if (isLoadingLGAs)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: selectedWard,
-                      hint: const Text('Select Ward'),
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      items: wards.map((ward) {
-                        return DropdownMenuItem(
-                          value: ward,
-                          child: Text(
-                            ward,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedWard = value;
-                          filterStakeholders();
-                        });
-                      },
-                    ),
+                )
+              else if (lgaLoadError != null)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    'Error loading LGAs: $lgaLoadError',
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
                   ),
-                ],
-              ),
+                )
+              else if (lgs.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text(
+                    '⚠️ No LGA data available. Wards collection may be empty or state mismatch.',
+                    style: TextStyle(color: Colors.orange, fontSize: 12),
+                  ),
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedLg,
+                        hint: const Text('Select LGA'),
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                        items: lgs.map((lg) {
+                          return DropdownMenuItem(
+                            value: lg,
+                            child: Text(
+                              lg,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedLg = value;
+                            selectedWard = null; // Reset ward when LGA changes
+                          });
+                          // Load wards for selected LGA
+                          if (value != null && value.isNotEmpty && currentUserState != null) {
+                            _loadWardsForLGA(currentUserState!, value);
+                          }
+                          filterStakeholders();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: isLoadingWards
+                        ? const Center(
+                            child: SizedBox(
+                              height: 30,
+                              width: 30,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : wardLoadError != null
+                          ? Center(
+                              child: Tooltip(
+                                message: wardLoadError,
+                                child: const Icon(Icons.error, color: Colors.red, size: 30),
+                              ),
+                            )
+                          : DropdownButtonFormField<String>(
+                              value: selectedWard,
+                              hint: const Text('Select Ward'),
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              items: wards.isEmpty
+                                ? [
+                                    const DropdownMenuItem(
+                                      value: null,
+                                      child: Text('No wards available'),
+                                      enabled: false,
+                                    )
+                                  ]
+                                : wards.map((ward) {
+                                    return DropdownMenuItem(
+                                      value: ward,
+                                      child: Text(
+                                        ward,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    );
+                                  }).toList(),
+                              onChanged: wards.isEmpty ? null : (value) {
+                                setState(() {
+                                  selectedWard = value;
+                                  filterStakeholders();
+                                });
+                              },
+                            ),
+                    ),
+                  ],
+                ),
               const SizedBox(height: 10),
 
               // Reset Filter Button
@@ -1487,5 +864,110 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  /// Run diagnostic tests to check LocationService and cache
+  void _runDiagnosticTests() {
+    // Import the test runner dynamically to avoid build issues
+    Future.microtask(() async {
+      try {
+        // Show loading indicator
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Running diagnostic tests... Check console')),
+        );
+
+        // Import and run tests
+        final testRunner = await _loadTestRunner();
+        testRunner();
+
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error running tests: $e')),
+        );
+      }
+    });
+  }
+
+  /// Dynamically load the test runner
+  Future<Function> _loadTestRunner() async {
+    // Since we can't import at runtime, we'll run the tests directly
+    // Import the services we need
+    final locationTestService = await _loadLocationTestService();
+    final hiveInspector = await _loadHiveInspector();
+
+    return () {
+      print('🔬 DASHBOARD DIAGNOSTIC TESTS');
+      print('=' * 50);
+
+      // Test 1: Direct Firestore access
+      print('TEST 1: Direct Firestore Access');
+      locationTestService.testDirectFirestoreAccess();
+
+      // Test 2: LocationService
+      print('\nTEST 2: LocationService Functionality');
+      locationTestService.testLocationService();
+
+      // Test 3: Stakeholder queries
+      print('\nTEST 3: Stakeholder Queries');
+      locationTestService.testStakeholderQueries();
+
+      // Test 4: Hive cache
+      print('\nTEST 4: Hive Cache Inspection');
+      hiveInspector.inspectHiveCache();
+
+      print('\n🏁 Tests Complete - Check console output');
+    };
+  }
+
+  Future<dynamic> _loadLocationTestService() async {
+    // Return the test functions
+    return _LocationTestServiceWrapper();
+  }
+
+  Future<dynamic> _loadHiveInspector() async {
+    return _HiveInspectorWrapper();
+  }
+}
+
+/// Wrapper classes to access test functions
+class _LocationTestServiceWrapper {
+  void testDirectFirestoreAccess() {
+    // Direct Firestore test
+    FirebaseFirestore.instance.collection('wards').get().then((snapshot) {
+      print('✅ Direct Firestore: Found ${snapshot.docs.length} documents in wards collection');
+      if (snapshot.docs.isNotEmpty) {
+        final doc = snapshot.docs.first.data();
+        print('  Sample: state="${doc['state']}", lga="${doc['lga']}", ward="${doc['ward']}"');
+      }
+    }).catchError((e) {
+      print('❌ Direct Firestore failed: $e');
+    });
+  }
+
+  void testLocationService() {
+    print('LocationService test would run here (needs full service initialization)');
+  }
+
+  void testStakeholderQueries() {
+    // Test stakeholder query with fixed LGA field
+    FirebaseFirestore.instance
+        .collection('stakeholders')
+        .where('state', isEqualTo: 'Lagos')
+        .where('LGA', isEqualTo: 'Agege')
+        .limit(3)
+        .get()
+        .then((snapshot) {
+          print('✅ Stakeholder query: Found ${snapshot.docs.length} results for Lagos/Agege');
+        })
+        .catchError((e) {
+          print('❌ Stakeholder query failed: $e');
+        });
+  }
+}
+
+class _HiveInspectorWrapper {
+  void inspectHiveCache() {
+    print('Hive cache inspection would run here (needs Hive initialization)');
+    print('Note: To clear cache, call StakeholderCacheService().clearCache()');
   }
 }

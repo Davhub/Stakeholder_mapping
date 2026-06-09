@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:risdi/core/utils/location_utils.dart';
 import 'package:risdi/model/model.dart';
 import 'location_service.dart';
 
@@ -19,25 +20,48 @@ class DynamicSearchService {
     String? searchQuery,
   }) async {
     try {
+      final normalizedState = LocationUtils.normalizeDisplay(state);
+      final normalizedLga = lga != null ? LocationUtils.normalizeDisplay(lga) : null;
+      final normalizedWard = ward != null ? LocationUtils.normalizeDisplay(ward) : null;
+
       Query query = _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: state);
+          .where('state', isEqualTo: normalizedState);
 
       // Add LGA filter if selected
-      if (lga != null && lga.isNotEmpty) {
-        query = query.where('lg', isEqualTo: lga);
+      if (normalizedLga != null && normalizedLga.isNotEmpty) {
+        query = query.where('LGA', isEqualTo: normalizedLga);
       }
 
       // Add ward filter if selected
-      if (ward != null && ward.isNotEmpty) {
-        query = query.where('ward', isEqualTo: ward);
+      if (normalizedWard != null && normalizedWard.isNotEmpty) {
+        query = query.where('ward', isEqualTo: normalizedWard);
       }
 
       final snapshot = await query.get();
-      
       List<Stakeholder> stakeholders = snapshot.docs
           .map((doc) => Stakeholder.fromFirestore(doc))
           .toList();
+
+      if (stakeholders.isEmpty && (normalizedLga?.isNotEmpty == true || normalizedWard?.isNotEmpty == true)) {
+        final fallbackSnapshot = await _firestore
+            .collection('stakeholders')
+            .where('state', isEqualTo: normalizedState)
+            .get();
+        stakeholders = fallbackSnapshot.docs
+            .map((doc) => Stakeholder.fromFirestore(doc))
+            .where((stakeholder) {
+          if (normalizedLga != null && normalizedLga.isNotEmpty &&
+              !LocationUtils.equalsIgnoreCase(stakeholder.lg, normalizedLga)) {
+            return false;
+          }
+          if (normalizedWard != null && normalizedWard.isNotEmpty &&
+              !LocationUtils.equalsIgnoreCase(stakeholder.ward, normalizedWard)) {
+            return false;
+          }
+          return true;
+        }).toList();
+      }
 
       // Apply search query filter if provided
       if (searchQuery != null && searchQuery.isNotEmpty) {
@@ -90,16 +114,20 @@ class DynamicSearchService {
     String? ward,
   }) {
     try {
+      final normalizedState = LocationUtils.normalizeDisplay(state);
+      final normalizedLga = lga != null ? LocationUtils.normalizeDisplay(lga) : null;
+      final normalizedWard = ward != null ? LocationUtils.normalizeDisplay(ward) : null;
+
       Query query = _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: state);
+          .where('state', isEqualTo: normalizedState);
 
-      if (lga != null && lga.isNotEmpty) {
-        query = query.where('lg', isEqualTo: lga);
+      if (normalizedLga != null && normalizedLga.isNotEmpty) {
+        query = query.where('LGA', isEqualTo: normalizedLga);
       }
 
-      if (ward != null && ward.isNotEmpty) {
-        query = query.where('ward', isEqualTo: ward);
+      if (normalizedWard != null && normalizedWard.isNotEmpty) {
+        query = query.where('ward', isEqualTo: normalizedWard);
       }
 
       return query.snapshots().map((snapshot) {
@@ -120,16 +148,20 @@ class DynamicSearchService {
     String? ward,
   }) async {
     try {
+      final normalizedState = LocationUtils.normalizeDisplay(state);
+      final normalizedLga = lga != null ? LocationUtils.normalizeDisplay(lga) : null;
+      final normalizedWard = ward != null ? LocationUtils.normalizeDisplay(ward) : null;
+
       Query query = _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: state);
+          .where('state', isEqualTo: normalizedState);
 
-      if (lga != null && lga.isNotEmpty) {
-        query = query.where('lg', isEqualTo: lga);
+      if (normalizedLga != null && normalizedLga.isNotEmpty) {
+        query = query.where('LGA', isEqualTo: normalizedLga);
       }
 
-      if (ward != null && ward.isNotEmpty) {
-        query = query.where('ward', isEqualTo: ward);
+      if (normalizedWard != null && normalizedWard.isNotEmpty) {
+        query = query.where('ward', isEqualTo: normalizedWard);
       }
 
       final snapshot = await query.count().get();

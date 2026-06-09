@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:risdi/core/utils/location_utils.dart';
 import 'package:risdi/model/stakeholder_contact_model.dart';
 
 /// Service for managing Stakeholder caching with Hive
@@ -49,7 +50,10 @@ class StakeholderCacheService {
   /// Get stakeholders by state - INSTANT from cache
   List<Stakeholder> getStakeholdersByState(String state) {
     if (!_initialized) return [];
-    return _stakeholdersBox.values.where((s) => s.state == state).toList();
+    final normalizedState = LocationUtils.normalizeDisplay(state);
+    return _stakeholdersBox.values
+        .where((s) => LocationUtils.normalizeDisplay(s.state) == normalizedState)
+        .toList();
   }
 
   /// Get stakeholder by name
@@ -76,25 +80,35 @@ class StakeholderCacheService {
 
     List<Stakeholder> results = _stakeholdersBox.values.where((s) {
       // Check state filter
-      if (state != null && state.isNotEmpty && s.state != state) {
-        return false;
+      if (state != null && state.isNotEmpty) {
+        final normalizedFilter = LocationUtils.normalizeDisplay(state);
+        if (LocationUtils.normalizeDisplay(s.state) != normalizedFilter) {
+          return false;
+        }
       }
 
       // Check association filter
-      if (association != null &&
-          association.isNotEmpty &&
-          s.association != association) {
-        return false;
+      if (association != null && association.isNotEmpty) {
+        final normalizedAssociation = association.trim().toLowerCase();
+        if (s.association.trim().toLowerCase() != normalizedAssociation) {
+          return false;
+        }
       }
 
       // Check LG filter
-      if (lg != null && lg.isNotEmpty && s.lg != lg) {
-        return false;
+      if (lg != null && lg.isNotEmpty) {
+        final normalizedFilter = LocationUtils.normalizeDisplay(lg);
+        if (LocationUtils.normalizeDisplay(s.lg) != normalizedFilter) {
+          return false;
+        }
       }
 
       // Check ward filter
-      if (ward != null && ward.isNotEmpty && s.ward != ward) {
-        return false;
+      if (ward != null && ward.isNotEmpty) {
+        final normalizedFilter = LocationUtils.normalizeDisplay(ward);
+        if (LocationUtils.normalizeDisplay(s.ward) != normalizedFilter) {
+          return false;
+        }
       }
 
       // Check query match (name, phone, email)

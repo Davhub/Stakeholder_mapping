@@ -16,7 +16,7 @@ class FirestoreService {
       query = query.where('state', isEqualTo: state);
     }
     if (lg != null && lg.isNotEmpty) {
-      query = query.where('lg', isEqualTo: lg);
+      query = query.where('LGA', isEqualTo: lg);
     }
     if (ward != null && ward.isNotEmpty) {
       query = query.where('ward', isEqualTo: ward);

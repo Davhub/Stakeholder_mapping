@@ -135,7 +135,7 @@ class AdminFirestoreService {
         .where('state', isEqualTo: adminState);
 
     if (lgaFilter != null && lgaFilter.isNotEmpty) {
-      query = query.where('lg', isEqualTo: lgaFilter);
+      query = query.where('LGA', isEqualTo: lgaFilter);
     }
 
     if (wardFilter != null && wardFilter.isNotEmpty) {
@@ -250,7 +250,7 @@ class AdminFirestoreService {
           .where('state', isEqualTo: adminState);
 
       if (selectedLGA != null && selectedLGA.isNotEmpty) {
-        query = query.where('lg', isEqualTo: selectedLGA);
+        query = query.where('LGA', isEqualTo: selectedLGA);
       }
 
       final snapshot = await query.get();
@@ -330,7 +330,7 @@ class AdminFirestoreService {
           .where('state', isEqualTo: adminState);
 
       if (lga != null && lga.isNotEmpty) {
-        query = query.where('lg', isEqualTo: lga);
+        query = query.where('LGA', isEqualTo: lga);
       }
 
       final snapshot = await query.get();

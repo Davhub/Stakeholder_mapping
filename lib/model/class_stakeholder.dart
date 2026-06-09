@@ -24,7 +24,7 @@ class Stakeholder {
     return Stakeholder(
       name: data['name'],
       ward: data['ward'],
-      lg: data['lg'],
+      lg: data['LGA'] ?? data['lg'] ?? '',  // Try 'LGA' first (actual Firestore field), fallback to 'lg'
       state: data['state'],
       country: data['country'],
       association: data['association'],
@@ -38,12 +38,12 @@ class Stakeholder {
     return {
       'name': name,
       'ward': ward,
-      'lg': lg,
+      'LGA': lg,  // Changed: Write as 'LGA' to match actual Firestore field name
       'state': state,
       'country': country,
       'association': association,
       'phNumber': phNumber,
-      'whatsappNumber': whNumber,
+      'whNumber': whNumber,
     };
   }
 }

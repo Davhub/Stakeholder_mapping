@@ -142,5 +142,16 @@ service cloud.firestore {
       allow delete: if request.auth != null && 
                        request.auth.uid == resource.data.userId;
     }
+
+
+    //wards collection - for filtering stakeholders by location
+    // Stores documents with fields: state, lga, ward
+    match /wards/{wardId} {
+      // Allow authenticated users to read (list/get) wards for UI filtering
+      allow read: if request.auth != null;
+
+      // Restrict writes to Super Admins only
+      allow create, update, delete: if request.auth != null && getUserRole() == 'Super Admin';
+    }
   }
 }
