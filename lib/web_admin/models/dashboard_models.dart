@@ -25,6 +25,39 @@ class DashboardKPIs {
   }
 }
 
+/// A single stakeholder's contact-engagement totals for the DUA report.
+class ContactedStakeholder {
+  final String name;
+  final String lg;
+  final String ward;
+  final int totalContacts;
+  final int calls;
+  final int whatsapp;
+
+  ContactedStakeholder({
+    required this.name,
+    required this.lg,
+    required this.ward,
+    required this.totalContacts,
+    required this.calls,
+    required this.whatsapp,
+  });
+}
+
+/// Contact-engagement analytics for the DUA report: who is contacted most,
+/// and which LGAs/Wards generate the most contact activity.
+class DUAContactAnalytics {
+  final List<ContactedStakeholder> topContactedStakeholders;
+  final Map<String, int> contactsByLGA;
+  final Map<String, int> contactsByWard;
+
+  DUAContactAnalytics({
+    required this.topContactedStakeholders,
+    required this.contactsByLGA,
+    required this.contactsByWard,
+  });
+}
+
 /// Model for chart data points
 class ChartDataPoint {
   final String label;

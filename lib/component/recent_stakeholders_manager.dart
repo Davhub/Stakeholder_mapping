@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:risdi/model/model.dart';
 import 'dart:convert';
@@ -46,7 +47,7 @@ class RecentStakeholdersManager {
 
       await prefs.setStringList(_recentStakeholdersKey, recentStakeholdersJson);
     } catch (e) {
-      print('Error adding to recent stakeholders: $e');
+      debugPrint('Error adding to recent stakeholders: $e');
     }
   }
 
@@ -64,7 +65,7 @@ class RecentStakeholdersManager {
       }
       return [];
     } catch (e) {
-      print('Error loading recent stakeholders: $e');
+      debugPrint('Error loading recent stakeholders: $e');
       return [];
     }
   }
@@ -75,7 +76,7 @@ class RecentStakeholdersManager {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.remove(_recentStakeholdersKey);
     } catch (e) {
-      print('Error clearing recent stakeholders: $e');
+      debugPrint('Error clearing recent stakeholders: $e');
     }
   }
 }

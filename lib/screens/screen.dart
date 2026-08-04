@@ -1,4 +1,6 @@
 export 'onboarding_screen.dart';
+export 'legal_acceptance_screen.dart';
+export 'legal_document_screen.dart';
 export 'dashboard_screen.dart';
 export 'stakeholder_view.dart';
 export 'stakeholder_list_screen.dart';

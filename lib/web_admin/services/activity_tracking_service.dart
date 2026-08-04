@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:risdi/web_admin/models/audit_models.dart';
@@ -34,7 +35,7 @@ class ActivityTrackingService {
         sessionId: sessionId,
         timestamp: DateTime.now(),
         duration: durationMs,
-        platform: 'web',
+        platform: kIsWeb ? 'web' : 'mobile',
         metadata: metadata,
       );
 
@@ -48,7 +49,7 @@ class ActivityTrackingService {
 
       return true;
     } catch (e) {
-      print('Error tracking event: $e');
+      debugPrint('Error tracking event: $e');
       return false;
     }
   }
@@ -115,6 +116,32 @@ class ActivityTrackingService {
     );
   }
 
+  /// Track a stakeholder being contacted (phone call or WhatsApp tap).
+  /// Powers the "most contacted stakeholders" and "contact activity by
+  /// LGA/Ward" sections of the DUA report.
+  Future<bool> trackStakeholderContact({
+    required String stakeholderId,
+    required String stakeholderName,
+    required String contactMethod, // 'call' or 'whatsapp'
+    required String state,
+    required String lg,
+    required String ward,
+  }) async {
+    return trackEvent(
+      eventType: ActivityEventType.stakeholderContacted,
+      screenName: 'stakeholder_view',
+      featureName: contactMethod,
+      metadata: {
+        'stakeholderId': stakeholderId,
+        'stakeholderName': stakeholderName,
+        'contactMethod': contactMethod,
+        'state': state,
+        'lg': lg,
+        'ward': ward,
+      },
+    );
+  }
+
   /// Track error event
   Future<bool> trackError({
     required String errorType,
@@ -155,7 +182,7 @@ class ActivityTrackingService {
           .map((doc) => ActivityEvent.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching user activity: $e');
+      debugPrint('Error fetching user activity: $e');
       return [];
     }
   }
@@ -171,19 +198,16 @@ class ActivityTrackingService {
       Query<Map<String, dynamic>> query = _firestore
               .collection(_activityEventsCollection)
               .where('featureName', isEqualTo: featureName)
-              .orderBy('timestamp', descending: true)
-          as Query<Map<String, dynamic>>;
+              .orderBy('timestamp', descending: true);
 
       if (startDate != null) {
         query = query.where('timestamp',
-                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            as Query<Map<String, dynamic>>;
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
       }
 
       if (endDate != null) {
         query = query.where('timestamp',
-                isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-            as Query<Map<String, dynamic>>;
+                isLessThanOrEqualTo: Timestamp.fromDate(endDate));
       }
 
       final snapshot = await query.limit(limit).get();
@@ -192,7 +216,7 @@ class ActivityTrackingService {
           .map((doc) => ActivityEvent.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching feature activity: $e');
+      debugPrint('Error fetching feature activity: $e');
       return [];
     }
   }
@@ -208,19 +232,16 @@ class ActivityTrackingService {
       Query<Map<String, dynamic>> query = _firestore
               .collection(_activityEventsCollection)
               .where('screenName', isEqualTo: screenName)
-              .orderBy('timestamp', descending: true)
-          as Query<Map<String, dynamic>>;
+              .orderBy('timestamp', descending: true);
 
       if (startDate != null) {
         query = query.where('timestamp',
-                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            as Query<Map<String, dynamic>>;
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
       }
 
       if (endDate != null) {
         query = query.where('timestamp',
-                isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-            as Query<Map<String, dynamic>>;
+                isLessThanOrEqualTo: Timestamp.fromDate(endDate));
       }
 
       final snapshot = await query.limit(limit).get();
@@ -229,7 +250,7 @@ class ActivityTrackingService {
           .map((doc) => ActivityEvent.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching screen activity: $e');
+      debugPrint('Error fetching screen activity: $e');
       return [];
     }
   }
@@ -242,19 +263,16 @@ class ActivityTrackingService {
     try {
       Query<Map<String, dynamic>> query = _firestore
               .collection(_activityEventsCollection)
-              .where('eventType', isEqualTo: ActivityEventType.featureUsed)
-          as Query<Map<String, dynamic>>;
+              .where('eventType', isEqualTo: ActivityEventType.featureUsed);
 
       if (startDate != null) {
         query = query.where('timestamp',
-                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            as Query<Map<String, dynamic>>;
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
       }
 
       if (endDate != null) {
         query = query.where('timestamp',
-                isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-            as Query<Map<String, dynamic>>;
+                isLessThanOrEqualTo: Timestamp.fromDate(endDate));
       }
 
       final snapshot = await query.get();
@@ -269,7 +287,7 @@ class ActivityTrackingService {
 
       return summary;
     } catch (e) {
-      print('Error getting feature usage summary: $e');
+      debugPrint('Error getting feature usage summary: $e');
       return {};
     }
   }
@@ -282,19 +300,16 @@ class ActivityTrackingService {
     try {
       Query<Map<String, dynamic>> query = _firestore
               .collection(_activityEventsCollection)
-              .where('eventType', isEqualTo: ActivityEventType.screenView)
-          as Query<Map<String, dynamic>>;
+              .where('eventType', isEqualTo: ActivityEventType.screenView);
 
       if (startDate != null) {
         query = query.where('timestamp',
-                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            as Query<Map<String, dynamic>>;
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
       }
 
       if (endDate != null) {
         query = query.where('timestamp',
-                isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-            as Query<Map<String, dynamic>>;
+                isLessThanOrEqualTo: Timestamp.fromDate(endDate));
       }
 
       final snapshot = await query.get();
@@ -307,7 +322,7 @@ class ActivityTrackingService {
 
       return summary;
     } catch (e) {
-      print('Error getting screen views summary: $e');
+      debugPrint('Error getting screen views summary: $e');
       return {};
     }
   }
@@ -347,7 +362,7 @@ class ActivityTrackingService {
 
       return null;
     } catch (e) {
-      print('Error fetching user session: $e');
+      debugPrint('Error fetching user session: $e');
       return null;
     }
   }
@@ -386,7 +401,7 @@ class ActivityTrackingService {
         'featureUsage': featureUsage,
       };
     } catch (e) {
-      print('Error getting daily metrics: $e');
+      debugPrint('Error getting daily metrics: $e');
       return {};
     }
   }
@@ -401,24 +416,20 @@ class ActivityTrackingService {
     try {
       Query<Map<String, dynamic>> query = _firestore
               .collection(_activityEventsCollection)
-              .orderBy('timestamp', descending: true)
-          as Query<Map<String, dynamic>>;
+              .orderBy('timestamp', descending: true);
 
       if (startDate != null) {
         query = query.where('timestamp',
-                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            as Query<Map<String, dynamic>>;
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
       }
 
       if (endDate != null) {
         query = query.where('timestamp',
-                isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-            as Query<Map<String, dynamic>>;
+                isLessThanOrEqualTo: Timestamp.fromDate(endDate));
       }
 
       if (eventType != null && eventType.isNotEmpty) {
-        query = query.where('eventType', isEqualTo: eventType)
-            as Query<Map<String, dynamic>>;
+        query = query.where('eventType', isEqualTo: eventType);
       }
 
       final snapshot = await query.limit(limit).get();
@@ -436,7 +447,7 @@ class ActivityTrackingService {
               })
           .toList();
     } catch (e) {
-      print('Error exporting activity events: $e');
+      debugPrint('Error exporting activity events: $e');
       return null;
     }
   }
@@ -475,7 +486,7 @@ class ActivityTrackingService {
 
       return sessionId;
     } catch (e) {
-      print('Error getting/creating session: $e');
+      debugPrint('Error getting/creating session: $e');
       return '';
     }
   }
@@ -495,7 +506,7 @@ class ActivityTrackingService {
         'screensVisited': FieldValue.arrayUnion([screenName]),
       });
     } catch (e) {
-      print('Error updating session: $e');
+      debugPrint('Error updating session: $e');
     }
   }
 
@@ -511,7 +522,7 @@ class ActivityTrackingService {
 
       return true;
     } catch (e) {
-      print('Error ending session: $e');
+      debugPrint('Error ending session: $e');
       return false;
     }
   }

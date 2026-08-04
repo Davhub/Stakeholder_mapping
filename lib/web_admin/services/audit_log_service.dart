@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:risdi/web_admin/models/audit_models.dart';
@@ -53,7 +54,7 @@ class AuditLogService {
 
       return true;
     } catch (e) {
-      print('Error logging action: $e');
+      debugPrint('Error logging action: $e');
       return false;
     }
   }
@@ -117,39 +118,33 @@ class AuditLogService {
       // Apply filters
       if (startDate != null) {
         query = query.where('timestamp',
-                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            as Query<Map<String, dynamic>>;
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
       }
 
       if (endDate != null) {
         query = query.where('timestamp',
-                isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-            as Query<Map<String, dynamic>>;
+                isLessThanOrEqualTo: Timestamp.fromDate(endDate));
       }
 
       if (userId != null && userId.isNotEmpty) {
-        query = query.where('userId', isEqualTo: userId)
-            as Query<Map<String, dynamic>>;
+        query = query.where('userId', isEqualTo: userId);
       }
 
       if (userRole != null && userRole.isNotEmpty) {
-        query = query.where('userRole', isEqualTo: userRole)
-            as Query<Map<String, dynamic>>;
+        query = query.where('userRole', isEqualTo: userRole);
       }
 
       if (action != null && action.isNotEmpty) {
-        query = query.where('action', isEqualTo: action)
-            as Query<Map<String, dynamic>>;
+        query = query.where('action', isEqualTo: action);
       }
 
       if (entityType != null && entityType.isNotEmpty) {
-        query = query.where('entityType', isEqualTo: entityType)
-            as Query<Map<String, dynamic>>;
+        query = query.where('entityType', isEqualTo: entityType);
       }
 
       if (startAfter != null) {
         query =
-            query.startAfterDocument(startAfter) as Query<Map<String, dynamic>>;
+            query.startAfterDocument(startAfter);
       }
 
       final snapshot = await query.limit(limit + 1).get();
@@ -169,7 +164,7 @@ class AuditLogService {
         total: snapshot.docs.length,
       );
     } catch (e) {
-      print('Error fetching audit logs: $e');
+      debugPrint('Error fetching audit logs: $e');
       return PaginatedAuditLogs(logs: [], hasMore: false);
     }
   }
@@ -208,7 +203,7 @@ class AuditLogService {
               (log.entityId?.toLowerCase().contains(searchLower) ?? false))
           .toList();
     } catch (e) {
-      print('Error searching audit logs: $e');
+      debugPrint('Error searching audit logs: $e');
       return [];
     }
   }
@@ -224,14 +219,12 @@ class AuditLogService {
 
       if (startDate != null) {
         query = query.where('timestamp',
-                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            as Query<Map<String, dynamic>>;
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
       }
 
       if (endDate != null) {
         query = query.where('timestamp',
-                isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-            as Query<Map<String, dynamic>>;
+                isLessThanOrEqualTo: Timestamp.fromDate(endDate));
       }
 
       final snapshot = await query.get();
@@ -244,7 +237,7 @@ class AuditLogService {
 
       return summary;
     } catch (e) {
-      print('Error getting action summary: $e');
+      debugPrint('Error getting action summary: $e');
       return {};
     }
   }
@@ -260,14 +253,12 @@ class AuditLogService {
 
       if (startDate != null) {
         query = query.where('timestamp',
-                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            as Query<Map<String, dynamic>>;
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
       }
 
       if (endDate != null) {
         query = query.where('timestamp',
-                isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-            as Query<Map<String, dynamic>>;
+                isLessThanOrEqualTo: Timestamp.fromDate(endDate));
       }
 
       final snapshot = await query.get();
@@ -280,7 +271,7 @@ class AuditLogService {
 
       return summary;
     } catch (e) {
-      print('Error getting user activity summary: $e');
+      debugPrint('Error getting user activity summary: $e');
       return {};
     }
   }
@@ -317,7 +308,7 @@ class AuditLogService {
               })
           .toList();
     } catch (e) {
-      print('Error exporting audit logs: $e');
+      debugPrint('Error exporting audit logs: $e');
       return null;
     }
   }
@@ -333,20 +324,18 @@ class AuditLogService {
 
       if (startDate != null) {
         query = query.where('timestamp',
-                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            as Query<Map<String, dynamic>>;
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
       }
 
       if (endDate != null) {
         query = query.where('timestamp',
-                isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-            as Query<Map<String, dynamic>>;
+                isLessThanOrEqualTo: Timestamp.fromDate(endDate));
       }
 
       final snapshot = await query.count().get();
       return snapshot.count ?? 0;
     } catch (e) {
-      print('Error counting audit logs: $e');
+      debugPrint('Error counting audit logs: $e');
       return 0;
     }
   }

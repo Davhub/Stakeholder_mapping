@@ -385,8 +385,14 @@ class _WebStakeholdersTableState extends State<WebStakeholdersTable> {
                     'country': countryController.text.trim(),
                     'association': associationController.text.trim(),
                     'state': _adminState!,
+                    // Keep every known field-name variant in sync so this
+                    // edit isn't shadowed by a stale value under a
+                    // different casing (see class_stakeholder.dart).
+                    'LGA': selectedLga!,
                     'lg': selectedLga!,
+                    'lga': selectedLga!,
                     'ward': selectedWard!,
+                    'Ward': selectedWard!,
                     'levelOfAdministration': selectedLevel!,
                   };
 

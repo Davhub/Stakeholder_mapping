@@ -51,7 +51,7 @@ class CustomNavBar extends StatelessWidget {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, -2),
               ),
@@ -171,7 +171,7 @@ class _NavBarButton extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+          color: isActive ? Colors.blue.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(25),
         ),
         child: Column(

@@ -73,16 +73,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "timestamp",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "audit_logs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
           "fieldPath": "userId",
           "order": "ASCENDING"
         },
@@ -200,16 +190,6 @@
         },
         {
           "fieldPath": "startTime",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "reports",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "generatedAt",
           "order": "DESCENDING"
         }
       ]

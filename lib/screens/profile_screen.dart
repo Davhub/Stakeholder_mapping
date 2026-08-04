@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:risdi/component/component.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:risdi/core/constants/legal_content.dart';
+import 'package:risdi/screens/legal_document_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -34,7 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         buildNumber = packageInfo.buildNumber;
       });
     } catch (e) {
-      print('Error loading app version: $e');
+      debugPrint('Error loading app version: $e');
     }
   }
 
@@ -132,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.indigo.withOpacity(0.3),
+                    color: Colors.indigo.withValues(alpha: 0.3),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -172,7 +174,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -242,7 +244,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 16),
 
-            
+            _buildActionCard(
+              icon: Icons.privacy_tip_outlined,
+              title: "Privacy Policy",
+              subtitle: "How we handle your data",
+              color: Colors.blue,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const LegalDocumentScreen(
+                      title: kPrivacyPolicyTitle,
+                      body: kPrivacyPolicyText,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            _buildActionCard(
+              icon: Icons.description_outlined,
+              title: "Terms & Conditions",
+              subtitle: "Rules for using RISDi",
+              color: Colors.deepPurple,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const LegalDocumentScreen(
+                      title: kTermsAndConditionsTitle,
+                      body: kTermsAndConditionsText,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
 
             _buildActionCard(
               icon: Icons.help_outline,
@@ -373,7 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: color.withOpacity(0.1),
+            backgroundColor: color.withValues(alpha: 0.1),
             radius: 20,
             child: Icon(icon, color: color, size: 20),
           ),
@@ -425,7 +461,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: color.withOpacity(0.1),
+              backgroundColor: color.withValues(alpha: 0.1),
               radius: 20,
               child: Icon(icon, color: color, size: 20),
             ),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:risdi/core/utils/location_utils.dart';
@@ -31,9 +32,9 @@ class StakeholderCacheService {
       _stakeholdersBox = await Hive.openBox<Stakeholder>(_stakeholdersBoxName);
       _favoritesBox = await Hive.openBox(_favoritesBoxName);
       _initialized = true;
-      print('StakeholderCacheService initialized successfully');
+      debugPrint('StakeholderCacheService initialized successfully');
     } catch (e) {
-      print('Error initializing StakeholderCacheService: $e');
+      debugPrint('Error initializing StakeholderCacheService: $e');
       rethrow;
     }
   }
@@ -41,7 +42,7 @@ class StakeholderCacheService {
   /// Get all cached stakeholders
   List<Stakeholder> getAllStakeholders() {
     if (!_initialized) {
-      print('Warning: Cache service not initialized');
+      debugPrint('Warning: Cache service not initialized');
       return [];
     }
     return _stakeholdersBox.values.toList();
@@ -133,9 +134,9 @@ class StakeholderCacheService {
       // Update cache timestamp
       await _favoritesBox.put(_cacheTimestampKey, DateTime.now().toString());
 
-      print('Cached ${stakeholders.length} stakeholders');
+      debugPrint('Cached ${stakeholders.length} stakeholders');
     } catch (e) {
-      print('Error caching stakeholders: $e');
+      debugPrint('Error caching stakeholders: $e');
     }
   }
 
@@ -145,7 +146,7 @@ class StakeholderCacheService {
     try {
       await _stakeholdersBox.add(stakeholder);
     } catch (e) {
-      print('Error adding stakeholder to cache: $e');
+      debugPrint('Error adding stakeholder to cache: $e');
     }
   }
 
@@ -165,7 +166,7 @@ class StakeholderCacheService {
         await _stakeholdersBox.putAt(index, updatedStakeholder);
       }
     } catch (e) {
-      print('Error updating stakeholder in cache: $e');
+      debugPrint('Error updating stakeholder in cache: $e');
     }
   }
 
@@ -174,9 +175,9 @@ class StakeholderCacheService {
     if (!_initialized) return;
     try {
       await _stakeholdersBox.clear();
-      print('Cache cleared');
+      debugPrint('Cache cleared');
     } catch (e) {
-      print('Error clearing cache: $e');
+      debugPrint('Error clearing cache: $e');
     }
   }
 
@@ -205,9 +206,9 @@ class StakeholderCacheService {
         'name': stakeholderName,
         'addedAt': DateTime.now().toIso8601String(),
       });
-      print('Added $stakeholderName to favorites');
+      debugPrint('Added $stakeholderName to favorites');
     } catch (e) {
-      print('Error adding favorite: $e');
+      debugPrint('Error adding favorite: $e');
     }
   }
 
@@ -219,9 +220,9 @@ class StakeholderCacheService {
       final userId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
       final favKey = '${userId}_${stakeholderName}';
       await _favoritesBox.delete(favKey);
-      print('Removed $stakeholderName from favorites');
+      debugPrint('Removed $stakeholderName from favorites');
     } catch (e) {
-      print('Error removing favorite: $e');
+      debugPrint('Error removing favorite: $e');
     }
   }
 
@@ -234,7 +235,7 @@ class StakeholderCacheService {
       final favKey = '${userId}_${stakeholderName}';
       return _favoritesBox.containsKey(favKey);
     } catch (e) {
-      print('Error checking favorite status: $e');
+      debugPrint('Error checking favorite status: $e');
       return false;
     }
   }
@@ -256,7 +257,7 @@ class StakeholderCacheService {
 
       return favoritedNames;
     } catch (e) {
-      print('Error getting favorites: $e');
+      debugPrint('Error getting favorites: $e');
       return [];
     }
   }
@@ -279,9 +280,9 @@ class StakeholderCacheService {
         await _favoritesBox.delete(key);
       }
 
-      print('Cleared ${keysToDelete.length} favorites');
+      debugPrint('Cleared ${keysToDelete.length} favorites');
     } catch (e) {
-      print('Error clearing favorites: $e');
+      debugPrint('Error clearing favorites: $e');
     }
   }
 
@@ -301,7 +302,7 @@ class StakeholderCacheService {
 
       return count;
     } catch (e) {
-      print('Error getting favorites count: $e');
+      debugPrint('Error getting favorites count: $e');
       return 0;
     }
   }

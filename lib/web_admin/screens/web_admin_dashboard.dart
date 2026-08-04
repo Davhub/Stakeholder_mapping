@@ -146,7 +146,7 @@ class _WebAdminDashboardState extends State<WebAdminDashboard> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(2, 0),
           ),
@@ -162,7 +162,7 @@ class _WebAdminDashboardState extends State<WebAdminDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -218,7 +218,7 @@ class _WebAdminDashboardState extends State<WebAdminDashboard> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? Colors.white.withOpacity(0.2)
+                              ? Colors.white.withValues(alpha: 0.2)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -266,7 +266,7 @@ class _WebAdminDashboardState extends State<WebAdminDashboard> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -307,7 +307,7 @@ class _WebAdminDashboardState extends State<WebAdminDashboard> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),

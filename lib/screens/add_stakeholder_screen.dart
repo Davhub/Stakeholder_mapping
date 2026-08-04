@@ -135,9 +135,9 @@ class _AddStakeholderScreenState extends State<AddStakeholderScreen> {
     super.initState();
     _initializeLocationService();
     if (widget.adminId.isEmpty) {
-      print('Error: adminId is empty');
+      debugPrint('Error: adminId is empty');
     } else {
-      print('Admin ID: ${widget.adminId}');
+      debugPrint('Admin ID: ${widget.adminId}');
     }
     _countryController.text = 'Nigeria'; // Default country
     _adminStateFuture = _fetchAdminState();
@@ -159,15 +159,20 @@ class _AddStakeholderScreenState extends State<AddStakeholderScreen> {
           // Persist both variants to maintain compatibility across consumers
           'LGA': normalizedLga,
           'lg': normalizedLga,
+          'lga': normalizedLga,
           'association': _associationController.text,
           'country': _countryController.text,
           'state': normalizedState,
           'ward': normalizedWard,
           'Ward': normalizedWard,
           'phoneNumber': _phoneNumberController.text,
+          'phNumber': _phoneNumberController.text,
           'whatsappNumber': _whatsappNumberController.text,
+          'whNumber': _whatsappNumberController.text,
           'email': _emailController.text,
           'levelOfAdministration': _levelOfAdministrationController.text,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -176,7 +181,7 @@ class _AddStakeholderScreenState extends State<AddStakeholderScreen> {
 
         Navigator.of(context).pop();
       } catch (e) {
-        print('Error adding stakeholder: $e');
+        debugPrint('Error adding stakeholder: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text('Error adding stakeholder. Please try again.')),
@@ -203,7 +208,7 @@ class _AddStakeholderScreenState extends State<AddStakeholderScreen> {
           }
 
           if (snapshot.hasError) {
-            print('FutureBuilder error: ${snapshot.error}');
+            debugPrint('FutureBuilder error: ${snapshot.error}');
             return const Center(
               child: Text('Error loading admin data.'),
             );

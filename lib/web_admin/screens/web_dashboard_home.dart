@@ -43,7 +43,7 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
                   .map((doc) => Stakeholder.fromFirestore(doc))
                   .toList())
               .handleError((error) {
-            print('Error in stakeholders stream: $error');
+            debugPrint('Error in stakeholders stream: $error');
             // Fallback to empty list on error
             return <Stakeholder>[];
           });
@@ -55,7 +55,7 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
         });
       }
     } catch (e) {
-      print('Error loading dashboard data: $e');
+      debugPrint('Error loading dashboard data: $e');
       setState(() {
         _isInitializing = false;
       });
@@ -230,9 +230,60 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
               ],
             ),
           ),
+          OutlinedButton.icon(
+            onPressed: _runBackfillTimestamps,
+            icon: const Icon(Icons.history_rounded, size: 18),
+            label: const Text('Fix Missing Timestamps'),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _runBackfillTimestamps() async {
+    if (_adminState == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Fix Missing Timestamps'),
+        content: const Text(
+          'Older stakeholder records added before timestamps were tracked '
+          'will be stamped with the current date/time as an approximation, '
+          'so they can be counted correctly in Recent Additions and trend '
+          'reports. Records that already have a timestamp are left '
+          'untouched. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final updatedCount =
+        await _service.backfillMissingTimestamps(_adminState!);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(updatedCount == 0
+            ? 'No records needed fixing.'
+            : 'Updated $updatedCount record(s).'),
+      ),
+    );
+
+    setState(() {
+      _kpisFuture = _loadKPIs();
+    });
   }
 
   Widget _buildKPISkeletons() {

@@ -21,15 +21,18 @@ class Stakeholder {
 
   // Convert a Firestore document to a Stakeholder object
   factory Stakeholder.fromFirestore(Map<String, dynamic> data) {
+    final lgaValue = data['LGA'] ?? data['lg'] ?? data['lga'] ?? '';
+    final whNumberValue = data['whNumber'] ?? data['whatsappNumber'] ?? '';
+
     return Stakeholder(
-      name: data['name'],
-      ward: data['ward'],
-      lg: data['LGA'] ?? data['lg'] ?? '',  // Try 'LGA' first (actual Firestore field), fallback to 'lg'
-      state: data['state'],
-      country: data['country'],
-      association: data['association'],
-      phNumber: data['phNumber'],
-      whNumber: data['whNumber'],
+      name: data['name'] ?? '',
+      ward: data['ward'] ?? data['Ward'] ?? '',
+      lg: lgaValue.toString(),
+      state: data['state'] ?? '',
+      country: data['country'] ?? '',
+      association: data['association'] ?? '',
+      phNumber: data['phNumber'] ?? data['phoneNumber'] ?? '',
+      whNumber: whNumberValue.toString(),
     );
   }
 
@@ -38,12 +41,17 @@ class Stakeholder {
     return {
       'name': name,
       'ward': ward,
-      'LGA': lg,  // Changed: Write as 'LGA' to match actual Firestore field name
+      'Ward': ward,
+      'LGA': lg,
+      'lg': lg,
+      'lga': lg,
       'state': state,
       'country': country,
       'association': association,
       'phNumber': phNumber,
+      'phoneNumber': phNumber,
       'whNumber': whNumber,
+      'whatsappNumber': whNumber,
     };
   }
 }

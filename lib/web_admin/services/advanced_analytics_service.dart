@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:risdi/web_admin/models/analytics_models.dart';
@@ -23,12 +24,10 @@ class AdvancedAnalyticsService {
               .where('createdAt',
                   isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
               .where('createdAt',
-                  isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-          as Query<Map<String, dynamic>>;
+                  isLessThanOrEqualTo: Timestamp.fromDate(endDate));
 
       if (state != null && state.isNotEmpty) {
-        query = query.where('state', isEqualTo: state)
-            as Query<Map<String, dynamic>>;
+        query = query.where('state', isEqualTo: state);
       }
 
       final snapshot = await query.get();
@@ -67,7 +66,7 @@ class AdvancedAnalyticsService {
 
       return growthData;
     } catch (e) {
-      print('Error getting stakeholder growth: $e');
+      debugPrint('Error getting stakeholder growth: $e');
       return [];
     }
   }
@@ -122,7 +121,7 @@ class AdvancedAnalyticsService {
 
       return geoDistributions;
     } catch (e) {
-      print('Error getting geographic distribution: $e');
+      debugPrint('Error getting geographic distribution: $e');
       return [];
     }
   }
@@ -162,7 +161,7 @@ class AdvancedAnalyticsService {
         previous: period1Count,
       );
     } catch (e) {
-      print('Error getting comparative analytics: $e');
+      debugPrint('Error getting comparative analytics: $e');
       return null;
     }
   }
@@ -204,7 +203,7 @@ class AdvancedAnalyticsService {
 
       return usageData;
     } catch (e) {
-      print('Error getting feature usage: $e');
+      debugPrint('Error getting feature usage: $e');
       return [];
     }
   }
@@ -246,7 +245,7 @@ class AdvancedAnalyticsService {
         dropOffPoints: [],
       );
     } catch (e) {
-      print('Error getting user activity summary: $e');
+      debugPrint('Error getting user activity summary: $e');
       return AppUsageMetrics(
         date: date,
         dailyActiveUsers: 0,
@@ -294,7 +293,7 @@ class AdvancedAnalyticsService {
         'systemHealthScore': 100 - errorRate.clamp(0, 100),
       };
     } catch (e) {
-      print('Error getting system health: $e');
+      debugPrint('Error getting system health: $e');
       return {
         'totalEvents': 0,
         'errorCount': 0,
@@ -328,7 +327,7 @@ class AdvancedAnalyticsService {
 
       return generatedReport;
     } catch (e) {
-      print('Error exporting report: $e');
+      debugPrint('Error exporting report: $e');
       return null;
     }
   }
@@ -345,12 +344,10 @@ class AdvancedAnalyticsService {
               .where('createdAt',
                   isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
               .where('createdAt',
-                  isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-          as Query<Map<String, dynamic>>;
+                  isLessThanOrEqualTo: Timestamp.fromDate(endDate));
 
       if (state != null && state.isNotEmpty) {
-        query = query.where('state', isEqualTo: state)
-            as Query<Map<String, dynamic>>;
+        query = query.where('state', isEqualTo: state);
       }
 
       final snapshot = await query.get();
@@ -387,7 +384,7 @@ class AdvancedAnalyticsService {
 
       return demographics;
     } catch (e) {
-      print('Error getting demographic insights: $e');
+      debugPrint('Error getting demographic insights: $e');
       return {};
     }
   }
@@ -431,7 +428,7 @@ class AdvancedAnalyticsService {
 
       return trendPoints;
     } catch (e) {
-      print('Error getting trend analysis: $e');
+      debugPrint('Error getting trend analysis: $e');
       return [];
     }
   }

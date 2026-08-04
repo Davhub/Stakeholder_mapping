@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:risdi/core/utils/location_utils.dart';
 import 'package:risdi/model/model.dart';
@@ -24,46 +25,26 @@ class DynamicSearchService {
       final normalizedLga = lga != null ? LocationUtils.normalizeDisplay(lga) : null;
       final normalizedWard = ward != null ? LocationUtils.normalizeDisplay(ward) : null;
 
-      Query query = _firestore
+      final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: normalizedState);
+          .where('state', isEqualTo: normalizedState)
+          .get();
 
-      // Add LGA filter if selected
-      if (normalizedLga != null && normalizedLga.isNotEmpty) {
-        query = query.where('LGA', isEqualTo: normalizedLga);
-      }
-
-      // Add ward filter if selected
-      if (normalizedWard != null && normalizedWard.isNotEmpty) {
-        query = query.where('ward', isEqualTo: normalizedWard);
-      }
-
-      final snapshot = await query.get();
       List<Stakeholder> stakeholders = snapshot.docs
           .map((doc) => Stakeholder.fromFirestore(doc))
+          .where((stakeholder) {
+            if (normalizedLga != null && normalizedLga.isNotEmpty &&
+                !LocationUtils.equalsIgnoreCase(stakeholder.lg, normalizedLga)) {
+              return false;
+            }
+            if (normalizedWard != null && normalizedWard.isNotEmpty &&
+                !LocationUtils.equalsIgnoreCase(stakeholder.ward, normalizedWard)) {
+              return false;
+            }
+            return true;
+          })
           .toList();
 
-      if (stakeholders.isEmpty && (normalizedLga?.isNotEmpty == true || normalizedWard?.isNotEmpty == true)) {
-        final fallbackSnapshot = await _firestore
-            .collection('stakeholders')
-            .where('state', isEqualTo: normalizedState)
-            .get();
-        stakeholders = fallbackSnapshot.docs
-            .map((doc) => Stakeholder.fromFirestore(doc))
-            .where((stakeholder) {
-          if (normalizedLga != null && normalizedLga.isNotEmpty &&
-              !LocationUtils.equalsIgnoreCase(stakeholder.lg, normalizedLga)) {
-            return false;
-          }
-          if (normalizedWard != null && normalizedWard.isNotEmpty &&
-              !LocationUtils.equalsIgnoreCase(stakeholder.ward, normalizedWard)) {
-            return false;
-          }
-          return true;
-        }).toList();
-      }
-
-      // Apply search query filter if provided
       if (searchQuery != null && searchQuery.isNotEmpty) {
         final lowerQuery = searchQuery.toLowerCase();
         stakeholders = stakeholders.where((stakeholder) {
@@ -77,7 +58,7 @@ class DynamicSearchService {
 
       return stakeholders;
     } catch (e) {
-      print('Error searching stakeholders: $e');
+      debugPrint('Error searching stakeholders: $e');
       return [];
     }
   }
@@ -91,7 +72,7 @@ class DynamicSearchService {
     try {
       return await _locationService.getWardsForLGA(state, lga);
     } catch (e) {
-      print('Error fetching wards: $e');
+      debugPrint('Error fetching wards: $e');
       return [];
     }
   }
@@ -101,7 +82,7 @@ class DynamicSearchService {
     try {
       return await _locationService.getLGAsForState(state);
     } catch (e) {
-      print('Error fetching LGAs: $e');
+      debugPrint('Error fetching LGAs: $e');
       return [];
     }
   }
@@ -118,25 +99,28 @@ class DynamicSearchService {
       final normalizedLga = lga != null ? LocationUtils.normalizeDisplay(lga) : null;
       final normalizedWard = ward != null ? LocationUtils.normalizeDisplay(ward) : null;
 
-      Query query = _firestore
+      return _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: normalizedState);
-
-      if (normalizedLga != null && normalizedLga.isNotEmpty) {
-        query = query.where('LGA', isEqualTo: normalizedLga);
-      }
-
-      if (normalizedWard != null && normalizedWard.isNotEmpty) {
-        query = query.where('ward', isEqualTo: normalizedWard);
-      }
-
-      return query.snapshots().map((snapshot) {
-        return snapshot.docs
-            .map((doc) => Stakeholder.fromFirestore(doc))
-            .toList();
-      });
+          .where('state', isEqualTo: normalizedState)
+          .snapshots()
+          .map((snapshot) {
+            return snapshot.docs
+                .map((doc) => Stakeholder.fromFirestore(doc))
+                .where((stakeholder) {
+                  if (normalizedLga != null && normalizedLga.isNotEmpty &&
+                      !LocationUtils.equalsIgnoreCase(stakeholder.lg, normalizedLga)) {
+                    return false;
+                  }
+                  if (normalizedWard != null && normalizedWard.isNotEmpty &&
+                      !LocationUtils.equalsIgnoreCase(stakeholder.ward, normalizedWard)) {
+                    return false;
+                  }
+                  return true;
+                })
+                .toList();
+          });
     } catch (e) {
-      print('Error streaming stakeholders: $e');
+      debugPrint('Error streaming stakeholders: $e');
       return Stream.value([]);
     }
   }
@@ -152,22 +136,25 @@ class DynamicSearchService {
       final normalizedLga = lga != null ? LocationUtils.normalizeDisplay(lga) : null;
       final normalizedWard = ward != null ? LocationUtils.normalizeDisplay(ward) : null;
 
-      Query query = _firestore
+      final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: normalizedState);
+          .where('state', isEqualTo: normalizedState)
+          .get();
 
-      if (normalizedLga != null && normalizedLga.isNotEmpty) {
-        query = query.where('LGA', isEqualTo: normalizedLga);
-      }
-
-      if (normalizedWard != null && normalizedWard.isNotEmpty) {
-        query = query.where('ward', isEqualTo: normalizedWard);
-      }
-
-      final snapshot = await query.count().get();
-      return snapshot.count ?? 0;
+      return snapshot.docs.where((doc) {
+        final stakeholder = Stakeholder.fromFirestore(doc);
+        if (normalizedLga != null && normalizedLga.isNotEmpty &&
+            !LocationUtils.equalsIgnoreCase(stakeholder.lg, normalizedLga)) {
+          return false;
+        }
+        if (normalizedWard != null && normalizedWard.isNotEmpty &&
+            !LocationUtils.equalsIgnoreCase(stakeholder.ward, normalizedWard)) {
+          return false;
+        }
+        return true;
+      }).length;
     } catch (e) {
-      print('Error counting stakeholders: $e');
+      debugPrint('Error counting stakeholders: $e');
       return 0;
     }
   }
@@ -177,7 +164,7 @@ class DynamicSearchService {
     try {
       return await _locationService.getAllLGAsAndWardsForState(state);
     } catch (e) {
-      print('Error fetching LGAs and wards map: $e');
+      debugPrint('Error fetching LGAs and wards map: $e');
       return {};
     }
   }

@@ -120,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _updateCounts(stakeholders);
         }
       } catch (firebaseError) {
-        print('Error fetching from Firestore: $firebaseError');
+        debugPrint('Error fetching from Firestore: $firebaseError');
         // Keep using Hive data if Firestore fails
         if (hiveStakeholders.isEmpty && mounted) {
           setState(() {
@@ -129,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     } catch (e) {
-      print('Error loading dashboard data: $e');
+      debugPrint('Error loading dashboard data: $e');
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -165,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print('Error loading favorites count: $e');
+      debugPrint('Error loading favorites count: $e');
     }
   }
 
@@ -177,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
         recentStakeholders = recent.take(5).toList(); // Show only 5 most recent
       });
     } catch (e) {
-      print('Error loading recent stakeholders: $e');
+      debugPrint('Error loading recent stakeholders: $e');
     }
   }
 
@@ -223,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue.withOpacity(0.4),
+                        color: Colors.blue.withValues(alpha: 0.4),
                         blurRadius: 15,
                         offset: const Offset(0, 8),
                       ),
@@ -234,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -437,7 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -452,7 +452,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(

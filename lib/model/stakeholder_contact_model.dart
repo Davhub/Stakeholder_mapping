@@ -60,8 +60,8 @@ class Stakeholder extends HiveObject {
 
     return Stakeholder(
       fullName: _sanitizeField(data['fullName']),
-      phoneNumber: _sanitizeField(data['phoneNumber']),
-      whatsappNumber: _sanitizeField(data['whatsappNumber']),
+      phoneNumber: _sanitizeField(data['phoneNumber'] ?? data['phNumber']),
+      whatsappNumber: _sanitizeField(data['whatsappNumber'] ?? data['whNumber']),
       email: _sanitizeField(data['email']),
       association: _sanitizeField(data['association']),
       levelOfAdministration: _sanitizeField(data['levelOfAdministration']),

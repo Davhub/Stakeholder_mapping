@@ -45,3 +45,8 @@ app.*.map.json
 /android/app/release
 
 serviceAccountKey.json
+
+# Release signing secrets - never commit
+android/key.properties
+*.jks
+*.keystore

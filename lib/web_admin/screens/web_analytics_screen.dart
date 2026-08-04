@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:risdi/web_admin/services/admin_firestore_service.dart';
+import 'package:risdi/web_admin/models/dashboard_models.dart';
 
 class WebAnalyticsScreen extends StatefulWidget {
   const WebAnalyticsScreen({Key? key}) : super(key: key);
@@ -16,6 +17,11 @@ class _WebAnalyticsScreenState extends State<WebAnalyticsScreen> {
   Map<String, int> _lgaDistribution = {};
   Map<String, int> _wardDistribution = {};
   Map<DateTime, int> _trendData = {};
+  DUAContactAnalytics _contactAnalytics = DUAContactAnalytics(
+    topContactedStakeholders: [],
+    contactsByLGA: {},
+    contactsByWard: {},
+  );
 
   @override
   void initState() {
@@ -38,11 +44,14 @@ class _WebAnalyticsScreenState extends State<WebAnalyticsScreen> {
           await _service.getStakeholderDistributionByWard(_adminState!, null);
       final trendData =
           await _service.getStakeholderAdditionsTrend(_adminState!);
+      final contactAnalytics =
+          await _service.getContactAnalytics(_adminState!);
 
       setState(() {
         _lgaDistribution = lgaData;
         _wardDistribution = wardData;
         _trendData = trendData;
+        _contactAnalytics = contactAnalytics;
         _isLoading = false;
       });
     } catch (e) {
@@ -124,8 +133,38 @@ class _WebAnalyticsScreenState extends State<WebAnalyticsScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Trend Chart Placeholder
+              // Trend Chart
               _buildTrendCard(),
+              const SizedBox(height: 32),
+
+              // DUA Report
+              const Text(
+                'DUA Report: Engagement',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Which stakeholders are being reached, and where.',
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              _buildTopContactedCard(),
+              const SizedBox(height: 24),
+              _buildDistributionCard(
+                'Contact Activity by LGA',
+                _contactAnalytics.contactsByLGA,
+                Colors.teal,
+              ),
+              const SizedBox(height: 24),
+              _buildDistributionCard(
+                'Contact Activity by Ward',
+                _contactAnalytics.contactsByWard,
+                Colors.indigo,
+              ),
             ],
           ],
         ),
@@ -227,7 +266,127 @@ class _WebAnalyticsScreenState extends State<WebAnalyticsScreen> {
     );
   }
 
+  Widget _buildTopContactedCard() {
+    final stakeholders = _contactAnalytics.topContactedStakeholders;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.phone_in_talk_rounded, color: Colors.green, size: 28),
+              SizedBox(width: 12),
+              Text(
+                'Most Contacted Stakeholders',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Counts phone-call and WhatsApp taps from the mobile app.',
+            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+          ),
+          const SizedBox(height: 24),
+          if (stakeholders.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Text(
+                  'No contact activity recorded yet',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: stakeholders.length,
+              separatorBuilder: (context, index) => const Divider(height: 24),
+              itemBuilder: (context, index) {
+                final s = stakeholders[index];
+                return Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Colors.green.shade50,
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          color: Colors.green.shade700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            s.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            '${s.lg} - ${s.ward}',
+                            style:
+                                TextStyle(color: Colors.grey[600], fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${s.totalContacts} contact(s)',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          '${s.calls} call(s), ${s.whatsapp} WhatsApp',
+                          style:
+                              TextStyle(color: Colors.grey[500], fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTrendCard() {
+    // Fill every day in the last 30 days so the chart shows true zeros
+    // instead of silently skipping days with no additions.
+    final today = DateTime.now();
+    final days = List.generate(30, (i) {
+      final date = DateTime(today.year, today.month, today.day)
+          .subtract(Duration(days: 29 - i));
+      return MapEntry(date, _trendData[date] ?? 0);
+    });
+    final totalAdditions = days.fold<int>(0, (sum, e) => sum + e.value);
+    final maxCount = days.fold<int>(1, (m, e) => e.value > m ? e.value : m);
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -252,39 +411,73 @@ class _WebAnalyticsScreenState extends State<WebAnalyticsScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Text(
+            '$totalAdditions stakeholder(s) added in the last 30 days',
+            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+          ),
           const SizedBox(height: 24),
-          if (_trendData.isEmpty)
+          if (totalAdditions == 0)
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Text(
-                  'No trend data available',
+                  'No additions in the last 30 days',
                   style: TextStyle(color: Colors.grey[600]),
                 ),
               ),
             )
           else
-            Container(
-              height: 200,
-              alignment: Alignment.center,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.show_chart, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Chart visualization coming soon',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Total data points: ${_trendData.length}',
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 12,
+            SizedBox(
+              height: 180,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: days.map((entry) {
+                  final barHeight =
+                      entry.value == 0 ? 2.0 : (entry.value / maxCount) * 140;
+                  return Expanded(
+                    child: Tooltip(
+                      message:
+                          '${entry.key.day}/${entry.key.month}/${entry.key.year}: '
+                          '${entry.value} added',
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 1),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (entry.value > 0)
+                              Text(
+                                '${entry.value}',
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            const SizedBox(height: 2),
+                            Container(
+                              height: barHeight,
+                              decoration: BoxDecoration(
+                                color: entry.value == 0
+                                    ? Colors.grey.shade200
+                                    : Colors.purple,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            if (entry.key.day == 1 || entry.key.day % 5 == 0)
+                              Text(
+                                '${entry.key.day}',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  );
+                }).toList(),
               ),
             ),
         ],

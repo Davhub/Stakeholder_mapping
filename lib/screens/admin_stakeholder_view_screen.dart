@@ -72,14 +72,14 @@ class _AdminStakeholderViewScreenState
                       height: 120,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [Colors.white.withOpacity(0.9), Colors.white],
+                          colors: [Colors.white.withValues(alpha: 0.9), Colors.white],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(60),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -117,7 +117,7 @@ class _AdminStakeholderViewScreenState
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -248,7 +248,7 @@ class _AdminStakeholderViewScreenState
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.withOpacity(0.1),
+                    color: Colors.deepPurple.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: Colors.deepPurple, size: 20),

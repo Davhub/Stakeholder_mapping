@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:risdi/web_admin/models/analytics_models.dart';
@@ -42,7 +43,7 @@ class ReportGenerationService {
 
       return reportId;
     } catch (e) {
-      print('Error creating report: $e');
+      debugPrint('Error creating report: $e');
       return null;
     }
   }
@@ -57,7 +58,7 @@ class ReportGenerationService {
 
       return AnalyticsReport.fromFirestore(doc);
     } catch (e) {
-      print('Error fetching report: $e');
+      debugPrint('Error fetching report: $e');
       return null;
     }
   }
@@ -77,7 +78,7 @@ class ReportGenerationService {
           .map((doc) => AnalyticsReport.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching reports: $e');
+      debugPrint('Error fetching reports: $e');
       return [];
     }
   }
@@ -99,7 +100,7 @@ class ReportGenerationService {
           .map((doc) => AnalyticsReport.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching reports by type: $e');
+      debugPrint('Error fetching reports by type: $e');
       return [];
     }
   }
@@ -124,7 +125,7 @@ class ReportGenerationService {
           .map((doc) => AnalyticsReport.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching reports by date range: $e');
+      debugPrint('Error fetching reports by date range: $e');
       return [];
     }
   }
@@ -147,7 +148,7 @@ class ReportGenerationService {
 
       return true;
     } catch (e) {
-      print('Error updating report: $e');
+      debugPrint('Error updating report: $e');
       return false;
     }
   }
@@ -158,7 +159,7 @@ class ReportGenerationService {
       await _firestore.collection(_reportsCollection).doc(reportId).delete();
       return true;
     } catch (e) {
-      print('Error deleting report: $e');
+      debugPrint('Error deleting report: $e');
       return false;
     }
   }
@@ -192,7 +193,7 @@ class ReportGenerationService {
 
       return generatedReportId;
     } catch (e) {
-      print('Error generating export: $e');
+      debugPrint('Error generating export: $e');
       return null;
     }
   }
@@ -209,7 +210,7 @@ class ReportGenerationService {
 
       return GeneratedReport.fromFirestore(doc);
     } catch (e) {
-      print('Error fetching generated report: $e');
+      debugPrint('Error fetching generated report: $e');
       return null;
     }
   }
@@ -231,7 +232,7 @@ class ReportGenerationService {
           .map((doc) => GeneratedReport.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching generated reports: $e');
+      debugPrint('Error fetching generated reports: $e');
       return [];
     }
   }
@@ -262,7 +263,7 @@ class ReportGenerationService {
 
       return scheduleId;
     } catch (e) {
-      print('Error scheduling report: $e');
+      debugPrint('Error scheduling report: $e');
       return null;
     }
   }
@@ -278,7 +279,7 @@ class ReportGenerationService {
 
       return snapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
-      print('Error fetching scheduled reports: $e');
+      debugPrint('Error fetching scheduled reports: $e');
       return [];
     }
   }
@@ -296,7 +297,7 @@ class ReportGenerationService {
 
       return true;
     } catch (e) {
-      print('Error cancelling scheduled report: $e');
+      debugPrint('Error cancelling scheduled report: $e');
       return false;
     }
   }
@@ -322,7 +323,7 @@ class ReportGenerationService {
 
       return true;
     } catch (e) {
-      print('Error updating report status: $e');
+      debugPrint('Error updating report status: $e');
       return false;
     }
   }
@@ -374,7 +375,7 @@ class ReportGenerationService {
         'reportsByType': typeCount,
       };
     } catch (e) {
-      print('Error getting report statistics: $e');
+      debugPrint('Error getting report statistics: $e');
       return {};
     }
   }

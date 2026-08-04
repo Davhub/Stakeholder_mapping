@@ -19,7 +19,7 @@ class OnboardingContent extends StatelessWidget {
           fit: BoxFit.cover,
         ),
         Container(
-          color: Colors.black.withOpacity(0.4),
+          color: Colors.black.withValues(alpha: 0.4),
         ),
         Positioned(
           bottom: 100,

@@ -149,7 +149,7 @@ class _AuthScreenState extends State<AuthScreen> {
           await _firestore.collection('users').doc(userId).get();
       String role = userDoc.get('role') as String;
 
-      print("User Role: $role"); // Debug line
+      debugPrint("User Role: $role"); // Debug line
 
       if (role == 'Admin') {
         Navigator.of(context).pushReplacement(MaterialPageRoute(
@@ -163,7 +163,7 @@ class _AuthScreenState extends State<AuthScreen> {
         );
       }
     } else {
-      print("User ID is null"); // Debug line
+      debugPrint("User ID is null"); // Debug line
     }
   }
 
@@ -174,9 +174,9 @@ class _AuthScreenState extends State<AuthScreen> {
       await FirebaseFirestore.instance.collection('users').doc(userId).update({
         'role': newRole,
       });
-      print('User role updated to $newRole');
+      debugPrint('User role updated to $newRole');
     } catch (e) {
-      print('Error updating user role: $e');
+      debugPrint('Error updating user role: $e');
     }
   }
 
@@ -226,7 +226,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.blue.withOpacity(0.3),
+                          color: Colors.blue.withValues(alpha: 0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),

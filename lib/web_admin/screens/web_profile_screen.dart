@@ -162,6 +162,22 @@ class _WebProfileScreenState extends State<WebProfileScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.build_circle_outlined,
+                      color: Colors.orange),
+                  title: const Text('Fix Missing Timestamps'),
+                  subtitle: const Text(
+                    'One-time repair for older stakeholder records missing '
+                    'a creation date (affects Recent Additions and trends)',
+                  ),
+                  trailing:
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                  onTap: _showBackfillTimestampsDialog,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ],
             ),
           ),
@@ -216,6 +232,96 @@ class _WebProfileScreenState extends State<WebProfileScreen> {
 
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+  }
+
+  void _showBackfillTimestampsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.build_circle_outlined, color: Colors.orange),
+            SizedBox(width: 12),
+            Text('Fix Missing Timestamps'),
+          ],
+        ),
+        content: const Text(
+          'This scans stakeholder records in your state and stamps a '
+          "creation date on any that are missing one, using today's date "
+          "as an approximation (the original add date can't be recovered). "
+          'Records that already have a creation date are left untouched. '
+          'This only affects your assigned state and cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _runBackfillTimestamps();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Run Fix'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _runBackfillTimestamps() async {
+    final state = _userProfile?['state']?.toString();
+    if (state == null || state.isEmpty || state == 'N/A') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not determine your assigned state'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 24),
+            Expanded(child: Text('Fixing missing timestamps...')),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final count = await _service.backfillMissingTimestamps(state);
+      if (!mounted) return;
+      Navigator.pop(context); // close progress dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(count == 0
+              ? 'No records needed fixing - all stakeholders already have a creation date'
+              : 'Fixed $count stakeholder record(s)'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // close progress dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error fixing timestamps: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _showChangePasswordDialog() {

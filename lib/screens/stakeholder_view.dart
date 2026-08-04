@@ -5,6 +5,7 @@ import 'package:risdi/firebase_services/favorite_service.dart';
 import 'package:risdi/services/stakeholder_cache_service.dart';
 import 'package:risdi/services/app_state_service.dart';
 import 'package:risdi/model/stakeholder_contact_model.dart';
+import 'package:risdi/web_admin/services/activity_tracking_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class StakeholderView extends StatefulWidget {
@@ -19,6 +20,8 @@ class StakeholderView extends StatefulWidget {
 class _StakeholderViewState extends State<StakeholderView>
     with SingleTickerProviderStateMixin {
   final FavoriteService _favoriteService = FavoriteService();
+  final ActivityTrackingService _activityTrackingService =
+      ActivityTrackingService();
   late StakeholderCacheService _cacheService;
   bool _isFavorite = false;
   late AnimationController _animationController;
@@ -123,7 +126,7 @@ class _StakeholderViewState extends State<StakeholderView>
       }
     } catch (e) {
       // Firestore sync failed, but local cache is still updated
-      print('Error syncing favorite with Firestore: $e');
+      debugPrint('Error syncing favorite with Firestore: $e');
     }
   }
 
@@ -188,6 +191,7 @@ class _StakeholderViewState extends State<StakeholderView>
 
   // Function to launch the phone dialer
   void _launchDialer(String phoneNumber) async {
+    _trackContact('call');
     final Uri launchUri = Uri(
       scheme: 'tel',
       path: phoneNumber,
@@ -197,6 +201,39 @@ class _StakeholderViewState extends State<StakeholderView>
     } else {
       throw 'Could not launch $phoneNumber';
     }
+  }
+
+  // Function to launch WhatsApp for the stakeholder's WhatsApp number
+  void _launchWhatsApp(String whatsappNumber) async {
+    final digitsOnly = whatsappNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitsOnly.isEmpty) return;
+    // Normalize a leading local '0' to Nigeria's country code.
+    final normalized =
+        digitsOnly.startsWith('0') ? '234${digitsOnly.substring(1)}' : digitsOnly;
+
+    _trackContact('whatsapp');
+    final Uri launchUri = Uri.parse('https://wa.me/$normalized');
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri, mode: LaunchMode.externalApplication);
+    } else {
+      throw 'Could not launch WhatsApp for $whatsappNumber';
+    }
+  }
+
+  // Records a contact event so the web admin DUA report can surface the
+  // most-contacted stakeholders and contact activity by LGA/Ward.
+  void _trackContact(String contactMethod) {
+    final holder = widget.holder;
+    final stakeholderId =
+        holder.fullName.toLowerCase().replaceAll(' ', '_');
+    _activityTrackingService.trackStakeholderContact(
+      stakeholderId: stakeholderId,
+      stakeholderName: holder.fullName,
+      contactMethod: contactMethod,
+      state: holder.state,
+      lg: holder.lg,
+      ward: holder.ward,
+    );
   }
 
   @override
@@ -259,14 +296,14 @@ class _StakeholderViewState extends State<StakeholderView>
                       height: 120,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [Colors.white.withOpacity(0.9), Colors.white],
+                          colors: [Colors.white.withValues(alpha: 0.9), Colors.white],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(60),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -300,7 +337,7 @@ class _StakeholderViewState extends State<StakeholderView>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -338,6 +375,11 @@ class _StakeholderViewState extends State<StakeholderView>
                         icon: Icons.chat,
                         label: 'WhatsApp',
                         value: widget.holder.whatsappNumber,
+                        onTap: widget.holder.whatsappNumber.isEmpty
+                            ? null
+                            : () => _launchWhatsApp(widget.holder.whatsappNumber),
+                        isClickable: widget.holder.whatsappNumber.isNotEmpty,
+                        clickIcon: Icons.chat,
                       ),
                       _buildDetailTile(
                         icon: Icons.email,
@@ -420,7 +462,7 @@ class _StakeholderViewState extends State<StakeholderView>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: Colors.blue, size: 20),
@@ -449,6 +491,7 @@ class _StakeholderViewState extends State<StakeholderView>
     required String value,
     VoidCallback? onTap,
     bool isClickable = false,
+    IconData clickIcon = Icons.phone,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -489,7 +532,7 @@ class _StakeholderViewState extends State<StakeholderView>
                   ],
                 ),
               ),
-              if (isClickable) Icon(Icons.phone, color: Colors.blue, size: 20),
+              if (isClickable) Icon(clickIcon, color: Colors.blue, size: 20),
             ],
           ),
         ),

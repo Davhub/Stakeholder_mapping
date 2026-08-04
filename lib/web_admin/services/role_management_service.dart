@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:risdi/web_admin/models/role_models.dart';
@@ -21,7 +22,7 @@ class RoleManagementService {
 
       return snapshot.docs.map((doc) => Role.fromFirestore(doc)).toList();
     } catch (e) {
-      print('Error fetching roles: $e');
+      debugPrint('Error fetching roles: $e');
       return [];
     }
   }
@@ -34,7 +35,7 @@ class RoleManagementService {
       if (!doc.exists) return null;
       return Role.fromFirestore(doc);
     } catch (e) {
-      print('Error fetching role: $e');
+      debugPrint('Error fetching role: $e');
       return null;
     }
   }
@@ -45,7 +46,7 @@ class RoleManagementService {
       final role = await getRoleById(roleId);
       return role?.permissions ?? [];
     } catch (e) {
-      print('Error fetching role permissions: $e');
+      debugPrint('Error fetching role permissions: $e');
       return [];
     }
   }
@@ -78,7 +79,7 @@ class RoleManagementService {
 
       return role.id;
     } catch (e) {
-      print('Error creating role: $e');
+      debugPrint('Error creating role: $e');
       return null;
     }
   }
@@ -104,7 +105,7 @@ class RoleManagementService {
       await _firestore.collection(_rolesCollection).doc(roleId).update(updates);
       return true;
     } catch (e) {
-      print('Error updating role: $e');
+      debugPrint('Error updating role: $e');
       return false;
     }
   }
@@ -114,7 +115,7 @@ class RoleManagementService {
     try {
       final role = await getRoleById(roleId);
       if (role?.isSystemRole ?? false) {
-        print('Cannot deactivate system roles');
+        debugPrint('Cannot deactivate system roles');
         return false;
       }
 
@@ -124,7 +125,7 @@ class RoleManagementService {
       });
       return true;
     } catch (e) {
-      print('Error deactivating role: $e');
+      debugPrint('Error deactivating role: $e');
       return false;
     }
   }
@@ -145,7 +146,7 @@ class RoleManagementService {
       final permissions = await getRolePermissions(roleId);
       return permissions.contains(permissionId);
     } catch (e) {
-      print('Error checking permission: $e');
+      debugPrint('Error checking permission: $e');
       return false;
     }
   }
@@ -165,7 +166,7 @@ class RoleManagementService {
 
       return await getRolePermissions(roleId);
     } catch (e) {
-      print('Error fetching current user permissions: $e');
+      debugPrint('Error fetching current user permissions: $e');
       return [];
     }
   }
@@ -181,7 +182,7 @@ class RoleManagementService {
 
       return snapshot.docs.map((doc) => AppUser.fromFirestore(doc)).toList();
     } catch (e) {
-      print('Error fetching users by role: $e');
+      debugPrint('Error fetching users by role: $e');
       return [];
     }
   }
@@ -196,7 +197,7 @@ class RoleManagementService {
           .get();
 
       if (existing.docs.isNotEmpty) {
-        print('Default roles already exist');
+        debugPrint('Default roles already exist');
         return;
       }
 
@@ -271,9 +272,9 @@ class RoleManagementService {
         'createdBy': createdBy,
       });
 
-      print('Default roles created successfully');
+      debugPrint('Default roles created successfully');
     } catch (e) {
-      print('Error creating default roles: $e');
+      debugPrint('Error creating default roles: $e');
     }
   }
 }

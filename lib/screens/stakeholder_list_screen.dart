@@ -189,34 +189,6 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
     });
   }
 
-  List<String> _getUniqueLGAs() {
-    // Use LocationService instead of cache for dynamic LGA data from Firestore
-    if (_locationService.isInitialized) {
-      final state = _getCurrentUserState();
-      if (state != null) {
-        return _locationService.getCachedLGAsForState(state);
-      }
-    }
-    // Fallback to cache if LocationService not available
-    final lgas = _cacheService.getAllStakeholders().map((s) => s.lg).toSet().toList();
-    lgas.sort();
-    return lgas;
-  }
-
-  List<String> _getUniqueWards() {
-    // Use LocationService instead of cache for dynamic ward data from Firestore
-    if (_locationService.isInitialized && selectedLGA != null) {
-      final state = _getCurrentUserState();
-      if (state != null) {
-        return _locationService.getCachedWardsForLGA(state, selectedLGA!);
-      }
-    }
-    // Fallback to cache if LocationService not available
-    final wards = _cacheService.getAllStakeholders().map((s) => s.ward).toSet().toList();
-    wards.sort();
-    return wards;
-  }
-
   @override
   Widget build(BuildContext context) {
     // Build title based on filter
@@ -507,7 +479,7 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(

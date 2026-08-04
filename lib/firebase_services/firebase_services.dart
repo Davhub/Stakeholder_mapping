@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:risdi/model/model.dart';
 
@@ -29,7 +30,7 @@ class FirestoreService {
           .toList();
     } catch (e) {
       // Handle any errors that occur during the query
-      print('Error fetching filtered holders: $e');
+      debugPrint('Error fetching filtered holders: $e');
       return [];
     }
   }

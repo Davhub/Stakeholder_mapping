@@ -263,9 +263,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
 
-      print('Hive data updated from Firestore in real time.');
+      debugPrint('Hive data updated from Firestore in real time.');
     }, onError: (error) {
-      print('Error listening to Firestore updates: $error');
+      debugPrint('Error listening to Firestore updates: $error');
     });
   }
 
@@ -490,7 +490,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -795,7 +795,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: Colors.blue.withOpacity(0.1),
+                backgroundColor: Colors.blue.withValues(alpha: 0.1),
                 radius: 24,
                 child: Text(
                   stakeholder.fullName.isNotEmpty
@@ -896,26 +896,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final hiveInspector = await _loadHiveInspector();
 
     return () {
-      print('🔬 DASHBOARD DIAGNOSTIC TESTS');
-      print('=' * 50);
+      debugPrint('🔬 DASHBOARD DIAGNOSTIC TESTS');
+      debugPrint('=' * 50);
 
       // Test 1: Direct Firestore access
-      print('TEST 1: Direct Firestore Access');
+      debugPrint('TEST 1: Direct Firestore Access');
       locationTestService.testDirectFirestoreAccess();
 
       // Test 2: LocationService
-      print('\nTEST 2: LocationService Functionality');
+      debugPrint('\nTEST 2: LocationService Functionality');
       locationTestService.testLocationService();
 
       // Test 3: Stakeholder queries
-      print('\nTEST 3: Stakeholder Queries');
+      debugPrint('\nTEST 3: Stakeholder Queries');
       locationTestService.testStakeholderQueries();
 
       // Test 4: Hive cache
-      print('\nTEST 4: Hive Cache Inspection');
+      debugPrint('\nTEST 4: Hive Cache Inspection');
       hiveInspector.inspectHiveCache();
 
-      print('\n🏁 Tests Complete - Check console output');
+      debugPrint('\n🏁 Tests Complete - Check console output');
     };
   }
 
@@ -934,18 +934,18 @@ class _LocationTestServiceWrapper {
   void testDirectFirestoreAccess() {
     // Direct Firestore test
     FirebaseFirestore.instance.collection('wards').get().then((snapshot) {
-      print('✅ Direct Firestore: Found ${snapshot.docs.length} documents in wards collection');
+      debugPrint('✅ Direct Firestore: Found ${snapshot.docs.length} documents in wards collection');
       if (snapshot.docs.isNotEmpty) {
         final doc = snapshot.docs.first.data();
-        print('  Sample: state="${doc['state']}", lga="${doc['lga']}", ward="${doc['ward']}"');
+        debugPrint('  Sample: state="${doc['state']}", lga="${doc['lga']}", ward="${doc['ward']}"');
       }
     }).catchError((e) {
-      print('❌ Direct Firestore failed: $e');
+      debugPrint('❌ Direct Firestore failed: $e');
     });
   }
 
   void testLocationService() {
-    print('LocationService test would run here (needs full service initialization)');
+    debugPrint('LocationService test would run here (needs full service initialization)');
   }
 
   void testStakeholderQueries() {
@@ -957,17 +957,17 @@ class _LocationTestServiceWrapper {
         .limit(3)
         .get()
         .then((snapshot) {
-          print('✅ Stakeholder query: Found ${snapshot.docs.length} results for Lagos/Agege');
+          debugPrint('✅ Stakeholder query: Found ${snapshot.docs.length} results for Lagos/Agege');
         })
         .catchError((e) {
-          print('❌ Stakeholder query failed: $e');
+          debugPrint('❌ Stakeholder query failed: $e');
         });
   }
 }
 
 class _HiveInspectorWrapper {
   void inspectHiveCache() {
-    print('Hive cache inspection would run here (needs Hive initialization)');
-    print('Note: To clear cache, call StakeholderCacheService().clearCache()');
+    debugPrint('Hive cache inspection would run here (needs Hive initialization)');
+    debugPrint('Note: To clear cache, call StakeholderCacheService().clearCache()');
   }
 }

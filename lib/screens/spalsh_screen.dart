@@ -11,8 +11,12 @@ import 'package:risdi/screens/home_screen_with_navbar.dart'; // User dashboard /
 
 class SplashScreen extends StatefulWidget {
   final bool hasSeenOnboarding;
-  const SplashScreen({Key? key, required this.hasSeenOnboarding})
-      : super(key: key);
+  final bool hasAcceptedLegalTerms;
+  const SplashScreen({
+    Key? key,
+    required this.hasSeenOnboarding,
+    required this.hasAcceptedLegalTerms,
+  }) : super(key: key);
 
   @override
   _SplashScreenState createState() => _SplashScreenState();
@@ -61,20 +65,26 @@ class _SplashScreenState extends State<SplashScreen> {
       if (mounted) {
         _checkUserRole(user);
       }
-    } else if (widget.hasSeenOnboarding) {
-      // If no user but onboarding is complete, navigate to AuthScreen
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const AuthScreen()),
-        );
-      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    if (!widget.hasSeenOnboarding) {
+      // First launch: show onboarding, which leads into legal acceptance.
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+      );
+    } else if (!widget.hasAcceptedLegalTerms) {
+      // Onboarding was seen previously but legal terms were never accepted
+      // (e.g. app was closed mid-flow) - block further progress until they are.
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LegalAcceptanceScreen()),
+      );
     } else {
-      // If onboarding is not complete, navigate to AuthScreen or Onboarding
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const AuthScreen()),
-        );
-      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const AuthScreen()),
+      );
     }
   }
 
@@ -115,7 +125,7 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     } catch (e) {
       // Handle Firestore errors (e.g., network issues)
-      print('Error fetching user role: $e');
+      debugPrint('Error fetching user role: $e');
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const AuthScreen()),
@@ -130,73 +140,39 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Container(
         color: Colors.white24, // Background color for splash
         child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/1.png',
-                    width: 240, height: 240),
-                // Text(
-                //   'Routine Immunization Stakeholders Directory',
-                //   textAlign: TextAlign.center,
-                //   style: TextStyle(
-                //     fontWeight: FontWeight.w900,
-                //     fontSize: 24,
-                //     color: Color(0xFF1f6ed4),
-                //     letterSpacing: 0.5,
-                //   ),
-                // ),
-                // // App Title with Fade Animation
-                // TweenAnimationBuilder(
-                //   duration: const Duration(milliseconds: 2000),
-                //   tween: Tween<double>(begin: 0, end: 1),
-                //   builder: (context, double value, child) {
-                //     return Opacity(
-                //       opacity: value,
-                //       child: Column(
-                //         children: [
-                //           Text(
-                //             'Routine Immunization Stakeholders Directory',
-                //             textAlign: TextAlign.center,
-                //             style: TextStyle(
-                //               fontWeight: FontWeight.w900,
-                //               fontSize: 24,
-                //               color:  Color(0xFF1f6ed4),
-                //               letterSpacing: 0.5,
-                //             ),
-                //           ),
-                //           const SizedBox(height: 12),
-
-                //         ],
-                //       ),
-                //     );
-                //   },
-                // ),
-                // const SizedBox(height: 60),
-
-                // // Loading Indicator
-                // const SizedBox(
-                //   width: 40,
-                //   height: 40,
-                //   child: CircularProgressIndicator(
-                //     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                //     strokeWidth: 3,
-                //   ),
-                // ),
-                // const SizedBox(height: 20),
-                // const Text(
-                //   'Loading your workspace...',
-                //   style: TextStyle(
-                //     color: Colors.white70,
-                //     fontSize: 14,
-                //     fontWeight: FontWeight.w500,
-                //   ),
-                // ),
-              ],
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset('assets/1.png', width: 240, height: 240),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'RISDi',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1f6ed4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
     );
   }
 }
+

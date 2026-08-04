@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:risdi/core/utils/location_utils.dart';
 
 class EditStakeholderScreen extends StatefulWidget {
   final String stakeholderId;
@@ -51,16 +52,28 @@ class _EditStakeholderScreenState extends State<EditStakeholderScreen> {
 
   void _updateStakeholder() async {
     if (_formKey.currentState!.validate()) {
+      final normalizedLga = LocationUtils.normalizeDisplay(_lgController.text);
+      final normalizedWard =
+          LocationUtils.normalizeDisplay(_wardController.text);
+      final normalizedState =
+          LocationUtils.normalizeDisplay(_stateController.text);
+
       // Update stakeholder data in Firestore
       await FirebaseFirestore.instance
           .collection('stakeholders')
           .doc(widget.stakeholderId)
           .update({
         'fullName': _nameController.text,
-        'lg': _lgController.text,
+        // Keep every known field-name variant in sync to avoid stale
+        // values under other casings (see class_stakeholder.dart).
+        'LGA': normalizedLga,
+        'lg': normalizedLga,
+        'lga': normalizedLga,
         'association': _associationController.text,
-        'state': _stateController.text,
-        'ward': _wardController.text,
+        'state': normalizedState,
+        'ward': normalizedWard,
+        'Ward': normalizedWard,
+        'updatedAt': FieldValue.serverTimestamp(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(

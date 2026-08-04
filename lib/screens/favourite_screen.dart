@@ -105,7 +105,7 @@ class _FavouriteScreenState extends State<FavouriteScreen> {
       // Note: FavoriteService.removeFavorite requires a Favorite model
       // We'll skip Firestore sync here since removal is handled via StakeholderView
     } catch (e) {
-      print('Error removing favorite: $e');
+      debugPrint('Error removing favorite: $e');
     }
   }
 
@@ -290,7 +290,7 @@ class _FavouriteScreenState extends State<FavouriteScreen> {
               Stack(
                 children: [
                   CircleAvatar(
-                    backgroundColor: Colors.pink.withOpacity(0.1),
+                    backgroundColor: Colors.pink.withValues(alpha: 0.1),
                     radius: 24,
                     child: Text(
                       (stakeholder.fullName).isNotEmpty

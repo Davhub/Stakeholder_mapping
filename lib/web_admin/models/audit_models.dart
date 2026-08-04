@@ -193,6 +193,9 @@ class ActivityEventType {
   // Errors
   static const String errorOccurred = 'error.occurred';
   static const String crashReported = 'crash.reported';
+
+  // Stakeholder engagement
+  static const String stakeholderContacted = 'stakeholder.contacted';
 }
 
 /// User session tracking

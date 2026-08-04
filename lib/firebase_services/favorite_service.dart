@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:risdi/model/favorite_model.dart';
@@ -30,7 +31,7 @@ class FavoriteService {
     try {
       final userId = _getCurrentUserId();
       if (userId == null) {
-        print('Error: User not authenticated');
+        debugPrint('Error: User not authenticated');
         return false;
       }
 
@@ -44,7 +45,7 @@ class FavoriteService {
           .get();
 
       if (existingFav.docs.isNotEmpty) {
-        print('Stakeholder already favorited');
+        debugPrint('Stakeholder already favorited');
         return false;
       }
 
@@ -62,10 +63,10 @@ class FavoriteService {
       );
 
       await _db.collection('favorites').add(favorite.toFirestore());
-      print('Favorite added successfully');
+      debugPrint('Favorite added successfully');
       return true;
     } catch (e) {
-      print('Error adding favorite: $e');
+      debugPrint('Error adding favorite: $e');
       return false;
     }
   }
@@ -76,7 +77,7 @@ class FavoriteService {
     try {
       final userId = _getCurrentUserId();
       if (userId == null) {
-        print('Error: User not authenticated');
+        debugPrint('Error: User not authenticated');
         return false;
       }
 
@@ -90,7 +91,7 @@ class FavoriteService {
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        print('Favorite not found');
+        debugPrint('Favorite not found');
         return false;
       }
 
@@ -98,10 +99,10 @@ class FavoriteService {
         await doc.reference.delete();
       }
 
-      print('Favorite removed successfully');
+      debugPrint('Favorite removed successfully');
       return true;
     } catch (e) {
-      print('Error removing favorite: $e');
+      debugPrint('Error removing favorite: $e');
       return false;
     }
   }
@@ -126,7 +127,7 @@ class FavoriteService {
 
       return querySnapshot.docs.isNotEmpty;
     } catch (e) {
-      print('Error checking favorite: $e');
+      debugPrint('Error checking favorite: $e');
       return false;
     }
   }
@@ -145,7 +146,7 @@ class FavoriteService {
         return success ? true : null; // Return true if favorited
       }
     } catch (e) {
-      print('Error toggling favorite: $e');
+      debugPrint('Error toggling favorite: $e');
       return null;
     }
   }
@@ -156,7 +157,7 @@ class FavoriteService {
     try {
       final userId = _getCurrentUserId();
       if (userId == null) {
-        print('Error: User not authenticated');
+        debugPrint('Error: User not authenticated');
         return [];
       }
 
@@ -170,7 +171,7 @@ class FavoriteService {
           .map((doc) => Favorite.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching favorites: $e');
+      debugPrint('Error fetching favorites: $e');
       return [];
     }
   }
@@ -207,7 +208,7 @@ class FavoriteService {
 
       return querySnapshot.count ?? 0;
     } catch (e) {
-      print('Error getting favorites count: $e');
+      debugPrint('Error getting favorites count: $e');
       return 0;
     }
   }
@@ -233,7 +234,7 @@ class FavoriteService {
           .map((doc) => Favorite.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error searching favorites: $e');
+      debugPrint('Error searching favorites: $e');
       return [];
     }
   }
@@ -263,7 +264,7 @@ class FavoriteService {
 
       return {for (var id in stakeholderIds) id: favoritedIds.contains(id)};
     } catch (e) {
-      print('Error batch checking favorites: $e');
+      debugPrint('Error batch checking favorites: $e');
       return {};
     }
   }
@@ -273,7 +274,7 @@ class FavoriteService {
     try {
       final userId = _getCurrentUserId();
       if (userId == null) {
-        print('Error: User not authenticated');
+        debugPrint('Error: User not authenticated');
         return false;
       }
 
@@ -286,10 +287,10 @@ class FavoriteService {
         await doc.reference.delete();
       }
 
-      print('All favorites cleared');
+      debugPrint('All favorites cleared');
       return true;
     } catch (e) {
-      print('Error clearing favorites: $e');
+      debugPrint('Error clearing favorites: $e');
       return false;
     }
   }

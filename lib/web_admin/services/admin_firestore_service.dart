@@ -1,12 +1,32 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:risdi/model/model.dart';
+import 'package:risdi/core/utils/location_utils.dart';
+import 'package:risdi/web_admin/models/dashboard_models.dart';
 
 /// Centralized Firestore service for web admin dashboard
 /// All queries are scoped to admin's assigned state for security
 class AdminFirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  /// Reads the LGA field regardless of which casing variant a document was
+  /// written with ('LGA', 'lg', or 'lga'), and normalizes casing so
+  /// "Ibadan North" and "ibadan north" are counted as the same LGA.
+  String? _readLga(Map<String, dynamic> data) {
+    final raw = LocationUtils.readStringField(data, ['LGA', 'lg', 'lga']);
+    if (raw == null || raw.trim().isEmpty) return null;
+    return LocationUtils.normalizeDisplay(raw);
+  }
+
+  /// Reads the Ward field regardless of casing variant, normalized the same
+  /// way as [_readLga].
+  String? _readWard(Map<String, dynamic> data) {
+    final raw = LocationUtils.readStringField(data, ['ward', 'Ward']);
+    if (raw == null || raw.trim().isEmpty) return null;
+    return LocationUtils.normalizeDisplay(raw);
+  }
 
   /// Get current admin's state from Firestore
   Future<String?> getAdminState() async {
@@ -19,7 +39,7 @@ class AdminFirestoreService {
 
       return userDoc.data()?['state'] as String?;
     } catch (e) {
-      print('Error fetching admin state: $e');
+      debugPrint('Error fetching admin state: $e');
       return null;
     }
   }
@@ -40,7 +60,7 @@ class AdminFirestoreService {
         'uid': user.uid,
       };
     } catch (e) {
-      print('Error fetching admin profile: $e');
+      debugPrint('Error fetching admin profile: $e');
       return null;
     }
   }
@@ -55,7 +75,7 @@ class AdminFirestoreService {
           .get();
       return snapshot.count ?? 0;
     } catch (e) {
-      print('Error fetching total stakeholders: $e');
+      debugPrint('Error fetching total stakeholders: $e');
       return 0;
     }
   }
@@ -69,13 +89,13 @@ class AdminFirestoreService {
           .get();
 
       final uniqueLGAs = snapshot.docs
-          .map((doc) => doc.data()['lg'] as String?)
-          .where((lg) => lg != null && lg.isNotEmpty)
+          .map((doc) => _readLga(doc.data()))
+          .whereType<String>()
           .toSet();
 
       return uniqueLGAs.length;
     } catch (e) {
-      print('Error fetching total LGAs: $e');
+      debugPrint('Error fetching total LGAs: $e');
       return 0;
     }
   }
@@ -89,15 +109,47 @@ class AdminFirestoreService {
           .get();
 
       final uniqueWards = snapshot.docs
-          .map((doc) => doc.data()['ward'] as String?)
-          .where((ward) => ward != null && ward.isNotEmpty)
+          .map((doc) => _readWard(doc.data()))
+          .whereType<String>()
           .toSet();
 
       return uniqueWards.length;
     } catch (e) {
-      print('Error fetching total wards: $e');
+      debugPrint('Error fetching total wards: $e');
       return 0;
     }
+  }
+
+  /// One-time maintenance: stamps createdAt/updatedAt on stakeholder
+  /// documents in the admin's state that don't have a createdAt yet
+  /// (e.g. records added by the mobile app before it began writing
+  /// timestamps). The true original creation time can't be recovered, so
+  /// "now" is used as an approximation. Never touches documents that
+  /// already have createdAt set. Returns the number of documents updated.
+  Future<int> backfillMissingTimestamps(String adminState) async {
+    final snapshot = await _firestore
+        .collection('stakeholders')
+        .where('state', isEqualTo: adminState)
+        .get();
+
+    final missing = snapshot.docs
+        .where((doc) => !doc.data().containsKey('createdAt'))
+        .toList();
+
+    const chunkSize = 450; // stay under Firestore's 500-write batch limit
+    for (var i = 0; i < missing.length; i += chunkSize) {
+      final chunk = missing.skip(i).take(chunkSize);
+      final batch = _firestore.batch();
+      for (final doc in chunk) {
+        batch.update(doc.reference, {
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      await batch.commit();
+    }
+
+    return missing.length;
   }
 
   /// Get recently added stakeholders (last 7 days)
@@ -115,7 +167,7 @@ class AdminFirestoreService {
       return snapshot.count ?? 0;
     } catch (e) {
       // If createdAt field doesn't exist, return 0
-      print('Error fetching recently added stakeholders: $e');
+      debugPrint('Error fetching recently added stakeholders: $e');
       return 0;
     }
   }
@@ -174,7 +226,7 @@ class AdminFirestoreService {
             stakeholder.association.toLowerCase().contains(searchLower);
       }).toList();
     } catch (e) {
-      print('Error searching stakeholders: $e');
+      debugPrint('Error searching stakeholders: $e');
       return [];
     }
   }
@@ -187,7 +239,7 @@ class AdminFirestoreService {
       await _firestore.collection('stakeholders').add(data);
       return true;
     } catch (e) {
-      print('Error creating stakeholder: $e');
+      debugPrint('Error creating stakeholder: $e');
       return false;
     }
   }
@@ -203,7 +255,7 @@ class AdminFirestoreService {
           .update(data);
       return true;
     } catch (e) {
-      print('Error updating stakeholder: $e');
+      debugPrint('Error updating stakeholder: $e');
       return false;
     }
   }
@@ -214,7 +266,7 @@ class AdminFirestoreService {
       await _firestore.collection('stakeholders').doc(stakeholderId).delete();
       return true;
     } catch (e) {
-      print('Error deleting stakeholder: $e');
+      debugPrint('Error deleting stakeholder: $e');
       return false;
     }
   }
@@ -230,13 +282,13 @@ class AdminFirestoreService {
 
       final distribution = <String, int>{};
       for (var doc in snapshot.docs) {
-        final lg = doc.data()['lg'] as String? ?? 'Unknown';
+        final lg = _readLga(doc.data()) ?? 'Unknown';
         distribution[lg] = (distribution[lg] ?? 0) + 1;
       }
 
       return distribution;
     } catch (e) {
-      print('Error fetching LGA distribution: $e');
+      debugPrint('Error fetching LGA distribution: $e');
       return {};
     }
   }
@@ -245,26 +297,28 @@ class AdminFirestoreService {
   Future<Map<String, int>> getStakeholderDistributionByWard(
       String adminState, String? selectedLGA) async {
     try {
-      Query query = _firestore
+      final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState);
+          .where('state', isEqualTo: adminState)
+          .get();
 
-      if (selectedLGA != null && selectedLGA.isNotEmpty) {
-        query = query.where('LGA', isEqualTo: selectedLGA);
-      }
-
-      final snapshot = await query.get();
+      final normalizedLgaFilter = (selectedLGA != null && selectedLGA.isNotEmpty)
+          ? LocationUtils.normalizeDisplay(selectedLGA)
+          : null;
 
       final distribution = <String, int>{};
       for (var doc in snapshot.docs) {
-        final ward = doc.data() as Map<String, dynamic>;
-        final wardName = ward['ward'] as String? ?? 'Unknown';
+        final data = doc.data();
+        if (normalizedLgaFilter != null && _readLga(data) != normalizedLgaFilter) {
+          continue;
+        }
+        final wardName = _readWard(data) ?? 'Unknown';
         distribution[wardName] = (distribution[wardName] ?? 0) + 1;
       }
 
       return distribution;
     } catch (e) {
-      print('Error fetching ward distribution: $e');
+      debugPrint('Error fetching ward distribution: $e');
       return {};
     }
   }
@@ -294,7 +348,7 @@ class AdminFirestoreService {
 
       return trends;
     } catch (e) {
-      print('Error fetching additions trend: $e');
+      debugPrint('Error fetching additions trend: $e');
       return {};
     }
   }
@@ -307,47 +361,132 @@ class AdminFirestoreService {
           .where('state', isEqualTo: adminState)
           .get();
 
-      final uniqueLGAs = snapshot.docs
-          .map((doc) => doc.data()['lg'] as String?)
-          .where((lg) => lg != null && lg.isNotEmpty)
-          .cast<String>()
-          .toSet()
-          .toList();
+      final uniqueLGAs =
+          snapshot.docs.map((doc) => _readLga(doc.data())).whereType<String>().toSet().toList();
 
       uniqueLGAs.sort();
       return uniqueLGAs;
     } catch (e) {
-      print('Error fetching unique LGAs: $e');
+      debugPrint('Error fetching unique LGAs: $e');
       return [];
+    }
+  }
+
+  /// Get contact-engagement analytics for the DUA report: which
+  /// stakeholders are contacted most (phone call / WhatsApp taps from the
+  /// mobile app), and which LGAs/Wards generate the most contact activity.
+  Future<DUAContactAnalytics> getContactAnalytics(String adminState) async {
+    try {
+      final snapshot = await _firestore
+          .collection('activity_events')
+          .where('eventType', isEqualTo: 'stakeholder.contacted')
+          .get();
+
+      final perStakeholder = <String, _StakeholderContactTotals>{};
+      final contactsByLGA = <String, int>{};
+      final contactsByWard = <String, int>{};
+
+      for (final doc in snapshot.docs) {
+        final metadata = doc.data()['metadata'] as Map<String, dynamic>?;
+        if (metadata == null) continue;
+        if (metadata['state'] != adminState) continue;
+
+        final stakeholderId = metadata['stakeholderId'] as String? ?? '';
+        final stakeholderName = metadata['stakeholderName'] as String? ?? '';
+        final contactMethod = metadata['contactMethod'] as String? ?? '';
+        final lg = metadata['lg'] as String? ?? 'Unknown';
+        final ward = metadata['ward'] as String? ?? 'Unknown';
+        if (stakeholderId.isEmpty) continue;
+
+        final totals = perStakeholder.putIfAbsent(
+          stakeholderId,
+          () => _StakeholderContactTotals(
+            name: stakeholderName,
+            lg: lg,
+            ward: ward,
+          ),
+        );
+        totals.total++;
+        if (contactMethod == 'call') {
+          totals.calls++;
+        } else if (contactMethod == 'whatsapp') {
+          totals.whatsapp++;
+        }
+
+        contactsByLGA[lg] = (contactsByLGA[lg] ?? 0) + 1;
+        contactsByWard[ward] = (contactsByWard[ward] ?? 0) + 1;
+      }
+
+      final topContacted = perStakeholder.values.toList()
+        ..sort((a, b) => b.total.compareTo(a.total));
+
+      return DUAContactAnalytics(
+        topContactedStakeholders: topContacted
+            .take(10)
+            .map((t) => ContactedStakeholder(
+                  name: t.name,
+                  lg: t.lg,
+                  ward: t.ward,
+                  totalContacts: t.total,
+                  calls: t.calls,
+                  whatsapp: t.whatsapp,
+                ))
+            .toList(),
+        contactsByLGA: contactsByLGA,
+        contactsByWard: contactsByWard,
+      );
+    } catch (e) {
+      debugPrint('Error fetching contact analytics: $e');
+      return DUAContactAnalytics(
+        topContactedStakeholders: [],
+        contactsByLGA: {},
+        contactsByWard: {},
+      );
     }
   }
 
   /// Get list of unique wards for admin's state (optionally filtered by LGA)
   Future<List<String>> getUniqueWards(String adminState, [String? lga]) async {
     try {
-      Query query = _firestore
+      final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState);
+          .where('state', isEqualTo: adminState)
+          .get();
 
-      if (lga != null && lga.isNotEmpty) {
-        query = query.where('LGA', isEqualTo: lga);
-      }
-
-      final snapshot = await query.get();
+      final normalizedLgaFilter =
+          (lga != null && lga.isNotEmpty) ? LocationUtils.normalizeDisplay(lga) : null;
 
       final uniqueWards = snapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .map((data) => data['ward'] as String?)
-          .where((ward) => ward != null && ward.isNotEmpty)
-          .cast<String>()
+          .map((doc) => doc.data())
+          .where((data) =>
+              normalizedLgaFilter == null || _readLga(data) == normalizedLgaFilter)
+          .map((data) => _readWard(data))
+          .whereType<String>()
           .toSet()
           .toList();
 
       uniqueWards.sort();
       return uniqueWards;
     } catch (e) {
-      print('Error fetching unique wards: $e');
+      debugPrint('Error fetching unique wards: $e');
       return [];
     }
   }
+}
+
+/// Accumulator used by [AdminFirestoreService.getContactAnalytics] while
+/// aggregating raw activity events into per-stakeholder totals.
+class _StakeholderContactTotals {
+  final String name;
+  final String lg;
+  final String ward;
+  int total = 0;
+  int calls = 0;
+  int whatsapp = 0;
+
+  _StakeholderContactTotals({
+    required this.name,
+    required this.lg,
+    required this.ward,
+  });
 }
