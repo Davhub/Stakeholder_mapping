@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:risdi/component/component.dart';
+import 'package:impact_konnect/component/component.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:risdi/core/constants/legal_content.dart';
-import 'package:risdi/screens/legal_document_screen.dart';
+import 'package:impact_konnect/core/constants/legal_content.dart';
+import 'package:impact_konnect/screens/legal_document_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -80,6 +80,120 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error signing out: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmAndDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'This permanently deletes your account and profile data. '
+          'This cannot be undone. Are you sure you want to continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final password = await _promptForPassword();
+    if (password == null || !mounted) return;
+
+    await _deleteAccount(password);
+  }
+
+  Future<String?> _promptForPassword() async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Your Password'),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Password'),
+          onSubmitted: (value) => Navigator.of(context).pop(value),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount(String password) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || currentUser.email == null) return;
+
+    try {
+      // Deleting an account is a sensitive operation that Firebase requires
+      // a *recent* sign-in for, so re-authenticate before proceeding.
+      final credential = EmailAuthProvider.credential(
+        email: currentUser.email!,
+        password: password,
+      );
+      await currentUser.reauthenticateWithCredential(credential);
+
+      final uid = currentUser.uid;
+      final firestore = FirebaseFirestore.instance;
+
+      // Remove this user's personal data: their favorites and profile doc.
+      // Stakeholder directory records are organizational program data, not
+      // this user's personal data, so they are intentionally left intact.
+      final favorites = await firestore
+          .collection('favorites')
+          .where('userId', isEqualTo: uid)
+          .get();
+      final batch = firestore.batch();
+      for (final doc in favorites.docs) {
+        batch.delete(doc.reference);
+      }
+      batch.delete(firestore.collection('users').doc(uid));
+      await batch.commit();
+
+      await currentUser.delete();
+
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AuthScreen()),
+          (route) => false,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      final message = e.code == 'wrong-password' || e.code == 'invalid-credential'
+          ? 'Incorrect password. Please try again.'
+          : 'Error deleting account: ${e.message}';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting account: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -265,7 +379,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildActionCard(
               icon: Icons.description_outlined,
               title: "Terms & Conditions",
-              subtitle: "Rules for using RISDi",
+              subtitle: "Rules for using Impact Konnect",
               color: Colors.deepPurple,
               onTap: () {
                 Navigator.of(context).push(
@@ -290,8 +404,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   scheme: 'mailto',
                   path: 'olatunjioladotun3@gmail.com',
                   queryParameters: {
-                    'subject': 'Help & Support - Stakeholder Mapping App',
-                    'body': 'Hi,\n\nI need help with the Stakeholder Mapping app.\n\nPlease describe your issue below:\n\n---\n\nApp Version: $appVersion\nBuild: $buildNumber',
+                    'subject': 'Help & Support - Impact Konnect App',
+                    'body': 'Hi,\n\nI need help with the Impact Konnect app.\n\nPlease describe your issue below:\n\n---\n\nApp Version: $appVersion\nBuild: $buildNumber',
                   },
                 );
                 try {
@@ -351,6 +465,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 );
               },
+            ),
+            const SizedBox(height: 12),
+
+            _buildActionCard(
+              icon: Icons.delete_forever_outlined,
+              title: "Delete Account",
+              subtitle: "Permanently delete your account and data",
+              color: Colors.red,
+              onTap: _confirmAndDeleteAccount,
             ),
             const SizedBox(height: 24),
 

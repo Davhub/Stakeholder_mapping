@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:risdi/services/location_service.dart';
-import 'package:risdi/core/utils/location_utils.dart';
+import 'package:impact_konnect/services/location_service.dart';
+import 'package:impact_konnect/core/utils/location_utils.dart';
 
 class AddStakeholderScreen extends StatefulWidget {
   final String adminId; // The logged-in admin's ID
@@ -16,6 +16,7 @@ class _AddStakeholderScreenState extends State<AddStakeholderScreen> {
   final _formKey = GlobalKey<FormState>();
   late LocationService _locationService;
   late Future<String?> _adminStateFuture;
+  String? _adminOrganizationId;
 
   // Controllers
   final TextEditingController _nameController = TextEditingController();
@@ -108,15 +109,26 @@ class _AddStakeholderScreenState extends State<AddStakeholderScreen> {
     }
   }
 
-  /// Fetch the admin's state from Firestore
+  /// Fetch the admin's state from Firestore. Also captures the admin's
+  /// organizationId as a side effect, so every stakeholder they add can be
+  /// tagged with which organization uploaded it.
   Future<String?> _fetchAdminState() async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(widget.adminId)
           .get();
-      
+
       if (doc.exists) {
+        final orgId = doc.data()?['organizationId'] as String?;
+        if (orgId != null && orgId.trim().isNotEmpty) {
+          _adminOrganizationId = orgId.trim();
+        } else {
+          debugPrint(
+              'Admin ${widget.adminId} has no organizationId; new '
+              'stakeholders from this account will be untagged.');
+        }
+
         final state = doc.data()?['state'] as String?;
         // Normalize state for consistent matching with Firestore wards collection
         if (state != null && state.isNotEmpty) {
@@ -171,6 +183,11 @@ class _AddStakeholderScreenState extends State<AddStakeholderScreen> {
           'whNumber': _whatsappNumberController.text,
           'email': _emailController.text,
           'levelOfAdministration': _levelOfAdministrationController.text,
+          // Traces this record back to the organization whose staff
+          // uploaded it. Absent only for pre-existing accounts that
+          // predate this field - see the Organization 1 migration.
+          if (_adminOrganizationId != null)
+            'organizationId': _adminOrganizationId,
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });

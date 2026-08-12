@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:risdi/screens/onboarding_screen.dart';
+import 'package:impact_konnect/screens/onboarding_screen.dart';
 
 void main() {
   testWidgets('Onboarding screen uses a scrollable layout for large text scaling', (

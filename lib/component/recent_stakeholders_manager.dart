@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:risdi/model/model.dart';
+import 'package:impact_konnect/model/model.dart';
 import 'dart:convert';
 
 class RecentStakeholdersManager {

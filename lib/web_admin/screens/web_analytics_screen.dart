@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:risdi/web_admin/services/admin_firestore_service.dart';
-import 'package:risdi/web_admin/models/dashboard_models.dart';
+import 'package:impact_konnect/web_admin/services/admin_firestore_service.dart';
+import 'package:impact_konnect/web_admin/models/dashboard_models.dart';
 
 class WebAnalyticsScreen extends StatefulWidget {
   const WebAnalyticsScreen({Key? key}) : super(key: key);
@@ -12,6 +12,7 @@ class WebAnalyticsScreen extends StatefulWidget {
 class _WebAnalyticsScreenState extends State<WebAnalyticsScreen> {
   final AdminFirestoreService _service = AdminFirestoreService();
   String? _adminState;
+  String? _adminOrganizationId;
   bool _isLoading = false;
 
   Map<String, int> _lgaDistribution = {};
@@ -31,21 +32,22 @@ class _WebAnalyticsScreenState extends State<WebAnalyticsScreen> {
 
   Future<void> _loadAnalytics() async {
     _adminState = await _service.getAdminState();
-    if (_adminState == null) return;
+    _adminOrganizationId = await _service.getAdminOrganizationId();
+    if (_adminOrganizationId == null) return;
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final lgaData =
-          await _service.getStakeholderDistributionByLGA(_adminState!);
-      final wardData =
-          await _service.getStakeholderDistributionByWard(_adminState!, null);
+      final lgaData = await _service
+          .getStakeholderDistributionByLGA(_adminOrganizationId!);
+      final wardData = await _service
+          .getStakeholderDistributionByWard(_adminOrganizationId!, null);
       final trendData =
-          await _service.getStakeholderAdditionsTrend(_adminState!);
+          await _service.getStakeholderAdditionsTrend(_adminOrganizationId!);
       final contactAnalytics =
-          await _service.getContactAnalytics(_adminState!);
+          await _service.getContactAnalytics(_adminState ?? '');
 
       setState(() {
         _lgaDistribution = lgaData;
@@ -68,7 +70,7 @@ class _WebAnalyticsScreenState extends State<WebAnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_adminState == null) {
+    if (_adminOrganizationId == null) {
       return const Center(child: CircularProgressIndicator());
     }
 

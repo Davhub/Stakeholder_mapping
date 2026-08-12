@@ -1,4 +1,4 @@
-/// Asset paths for images, icons, and logos used in the RISDi application.
+/// Asset paths for images, icons, and logos used in the Impact Konnect application.
 /// Centralize all asset references to prevent broken paths.
 class AppAssets {
   // Private constructor to prevent instantiation
@@ -10,8 +10,8 @@ class AppAssets {
   static const String _iconPath = '${_assetPath}icons/';
 
   // ======================== LOGOS & BRANDING ========================
-  static const String appLogo = '${_assetPath}1.png';
-  static const String appLogoWhite = '${_assetPath}1.png'; // Update if separate white version exists
+  static const String appLogo = '${_assetPath}icon/icon_standard.png';
+  static const String appLogoWhite = '${_assetPath}icon/icon_standard.png'; // Update if separate white version exists
   static const String unicefLogo = '${_assetPath}unicef-logo.png';
 
   // ======================== SPLASH & ONBOARDING IMAGES ========================

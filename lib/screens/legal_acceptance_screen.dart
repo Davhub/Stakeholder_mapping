@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:risdi/component/auth_form.dart';
-import 'package:risdi/core/constants/legal_content.dart';
-import 'package:risdi/screens/legal_document_screen.dart';
+import 'package:impact_konnect/component/auth_form.dart';
+import 'package:impact_konnect/core/constants/legal_content.dart';
+import 'package:impact_konnect/screens/legal_document_screen.dart';
 
 /// Shown once on first launch, after onboarding, before the user can reach
 /// the sign-in screen. The user must explicitly agree to both the Privacy
@@ -59,7 +59,7 @@ class _LegalAcceptanceScreenState extends State<LegalAcceptanceScreen> {
               const SizedBox(height: 12),
               Text(
                 'Please review and accept our Privacy Policy and Terms & '
-                'Conditions to continue using RISDi.',
+                'Conditions to continue using Impact Konnect.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               ),
@@ -126,7 +126,7 @@ class _LegalAcceptanceScreenState extends State<LegalAcceptanceScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'You cannot use RISDi without accepting both documents.',
+                'You cannot use Impact Konnect without accepting both documents.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: Colors.grey[500]),
               ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:risdi/web_admin/services/admin_firestore_service.dart';
+import 'package:impact_konnect/web_admin/services/admin_firestore_service.dart';
 
 class WebProfileScreen extends StatefulWidget {
   const WebProfileScreen({Key? key}) : super(key: key);
@@ -247,11 +247,11 @@ class _WebProfileScreenState extends State<WebProfileScreen> {
           ],
         ),
         content: const Text(
-          'This scans stakeholder records in your state and stamps a '
+          'This scans stakeholder records in your organization and stamps a '
           "creation date on any that are missing one, using today's date "
           "as an approximation (the original add date can't be recovered). "
           'Records that already have a creation date are left untouched. '
-          'This only affects your assigned state and cannot be undone.',
+          'This only affects your organization and cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -275,11 +275,11 @@ class _WebProfileScreenState extends State<WebProfileScreen> {
   }
 
   Future<void> _runBackfillTimestamps() async {
-    final state = _userProfile?['state']?.toString();
-    if (state == null || state.isEmpty || state == 'N/A') {
+    final organizationId = _userProfile?['organizationId']?.toString();
+    if (organizationId == null || organizationId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Could not determine your assigned state'),
+          content: Text('Could not determine your organization'),
           backgroundColor: Colors.red,
         ),
       );
@@ -301,7 +301,7 @@ class _WebProfileScreenState extends State<WebProfileScreen> {
     );
 
     try {
-      final count = await _service.backfillMissingTimestamps(state);
+      final count = await _service.backfillMissingTimestamps(organizationId);
       if (!mounted) return;
       Navigator.pop(context); // close progress dialog
       ScaffoldMessenger.of(context).showSnackBar(

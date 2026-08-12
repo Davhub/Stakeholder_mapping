@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:risdi/model/favorite_model.dart';
-import 'package:risdi/model/stakeholder_contact_model.dart';
+import 'package:impact_konnect/model/favorite_model.dart';
+import 'package:impact_konnect/model/stakeholder_contact_model.dart';
 
 class FavoriteService {
   static final FavoriteService _instance = FavoriteService._internal();

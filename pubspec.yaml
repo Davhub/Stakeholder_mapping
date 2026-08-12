@@ -1,5 +1,5 @@
-name: risdi
-description: "RISDi - Routine Immunization Stakeholders Directory. A comprehensive stakeholder mapping and management application for immunization programs."
+name: impact_konnect
+description: "Impact Konnect - A comprehensive stakeholder mapping and management application."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -35,10 +35,10 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
-  firebase_core: ^3.3.0
-  firebase_auth: ^5.1.4
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.7.0
   google_fonts: ^6.2.1
-  cloud_firestore: ^5.2.1
+  cloud_firestore: ^5.6.12
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   shared_preferences: ^2.3.2
@@ -62,8 +62,10 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/1.png"
+  image_path: "assets/icon/icon_standard.png"
   min_sdk_android: 21 # android min sdk min:16, default 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -79,6 +81,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/
+    - assets/icon/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

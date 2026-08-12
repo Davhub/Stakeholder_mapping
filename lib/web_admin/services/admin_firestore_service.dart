@@ -1,12 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:risdi/model/model.dart';
-import 'package:risdi/core/utils/location_utils.dart';
-import 'package:risdi/web_admin/models/dashboard_models.dart';
+import 'package:impact_konnect/model/model.dart';
+import 'package:impact_konnect/core/utils/location_utils.dart';
+import 'package:impact_konnect/web_admin/models/dashboard_models.dart';
 
 /// Centralized Firestore service for web admin dashboard
-/// All queries are scoped to admin's assigned state for security
+/// All queries are scoped to admin's organization; state is an optional
+/// secondary filter within that organization.
 class AdminFirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -44,6 +45,24 @@ class AdminFirestoreService {
     }
   }
 
+  /// Get current admin's organization ID from Firestore. The web dashboard
+  /// (Super Admin / Analyst) is scoped to the whole organization rather
+  /// than a single state.
+  Future<String?> getAdminOrganizationId() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return null;
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) return null;
+
+      return userDoc.data()?['organizationId'] as String?;
+    } catch (e) {
+      debugPrint('Error fetching admin organization: $e');
+      return null;
+    }
+  }
+
   /// Get admin profile data
   Future<Map<String, dynamic>?> getAdminProfile() async {
     try {
@@ -57,6 +76,7 @@ class AdminFirestoreService {
         'email': userDoc.data()?['email'] ?? user.email,
         'state': userDoc.data()?['state'] ?? 'N/A',
         'role': userDoc.data()?['role'] ?? 'Admin',
+        'organizationId': userDoc.data()?['organizationId'],
         'uid': user.uid,
       };
     } catch (e) {
@@ -65,12 +85,12 @@ class AdminFirestoreService {
     }
   }
 
-  /// Get total stakeholders count for admin's state
-  Future<int> getTotalStakeholders(String adminState) async {
+  /// Get total stakeholders count for admin's organization
+  Future<int> getTotalStakeholders(String organizationId) async {
     try {
       final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState)
+          .where('organizationId', isEqualTo: organizationId)
           .count()
           .get();
       return snapshot.count ?? 0;
@@ -80,12 +100,12 @@ class AdminFirestoreService {
     }
   }
 
-  /// Get unique LGAs count for admin's state
-  Future<int> getTotalLGAs(String adminState) async {
+  /// Get unique LGAs count for admin's organization
+  Future<int> getTotalLGAs(String organizationId) async {
     try {
       final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState)
+          .where('organizationId', isEqualTo: organizationId)
           .get();
 
       final uniqueLGAs = snapshot.docs
@@ -100,12 +120,12 @@ class AdminFirestoreService {
     }
   }
 
-  /// Get unique wards count for admin's state
-  Future<int> getTotalWards(String adminState) async {
+  /// Get unique wards count for admin's organization
+  Future<int> getTotalWards(String organizationId) async {
     try {
       final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState)
+          .where('organizationId', isEqualTo: organizationId)
           .get();
 
       final uniqueWards = snapshot.docs
@@ -126,10 +146,10 @@ class AdminFirestoreService {
   /// timestamps). The true original creation time can't be recovered, so
   /// "now" is used as an approximation. Never touches documents that
   /// already have createdAt set. Returns the number of documents updated.
-  Future<int> backfillMissingTimestamps(String adminState) async {
+  Future<int> backfillMissingTimestamps(String organizationId) async {
     final snapshot = await _firestore
         .collection('stakeholders')
-        .where('state', isEqualTo: adminState)
+        .where('organizationId', isEqualTo: organizationId)
         .get();
 
     final missing = snapshot.docs
@@ -153,12 +173,12 @@ class AdminFirestoreService {
   }
 
   /// Get recently added stakeholders (last 7 days)
-  Future<int> getRecentlyAddedStakeholders(String adminState) async {
+  Future<int> getRecentlyAddedStakeholders(String organizationId) async {
     try {
       final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
       final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState)
+          .where('organizationId', isEqualTo: organizationId)
           .where('createdAt',
               isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
           .count()
@@ -172,9 +192,10 @@ class AdminFirestoreService {
     }
   }
 
-  /// Real-time stream of stakeholders for admin's state with pagination
+  /// Real-time stream of stakeholders for admin's organization with pagination
   Stream<QuerySnapshot> getStakeholdersStream({
-    required String adminState,
+    required String organizationId,
+    String? stateFilter,
     String? lgaFilter,
     String? wardFilter,
     int limit = 50,
@@ -184,7 +205,11 @@ class AdminFirestoreService {
   }) {
     Query query = _firestore
         .collection('stakeholders')
-        .where('state', isEqualTo: adminState);
+        .where('organizationId', isEqualTo: organizationId);
+
+    if (stateFilter != null && stateFilter.isNotEmpty) {
+      query = query.where('state', isEqualTo: stateFilter);
+    }
 
     if (lgaFilter != null && lgaFilter.isNotEmpty) {
       query = query.where('LGA', isEqualTo: lgaFilter);
@@ -205,7 +230,7 @@ class AdminFirestoreService {
 
   /// Search stakeholders by name, phone, or association
   Future<List<Stakeholder>> searchStakeholders({
-    required String adminState,
+    required String organizationId,
     required String searchQuery,
   }) async {
     try {
@@ -213,7 +238,7 @@ class AdminFirestoreService {
 
       final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState)
+          .where('organizationId', isEqualTo: organizationId)
           .get();
 
       final searchLower = searchQuery.toLowerCase();
@@ -273,11 +298,11 @@ class AdminFirestoreService {
 
   /// Get stakeholder distribution by LGA
   Future<Map<String, int>> getStakeholderDistributionByLGA(
-      String adminState) async {
+      String organizationId) async {
     try {
       final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState)
+          .where('organizationId', isEqualTo: organizationId)
           .get();
 
       final distribution = <String, int>{};
@@ -295,11 +320,11 @@ class AdminFirestoreService {
 
   /// Get stakeholder distribution by Ward
   Future<Map<String, int>> getStakeholderDistributionByWard(
-      String adminState, String? selectedLGA) async {
+      String organizationId, String? selectedLGA) async {
     try {
       final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState)
+          .where('organizationId', isEqualTo: organizationId)
           .get();
 
       final normalizedLgaFilter = (selectedLGA != null && selectedLGA.isNotEmpty)
@@ -325,12 +350,12 @@ class AdminFirestoreService {
 
   /// Get stakeholder additions over time (last 30 days)
   Future<Map<DateTime, int>> getStakeholderAdditionsTrend(
-      String adminState) async {
+      String organizationId) async {
     try {
       final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
       final snapshot = await _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState)
+          .where('organizationId', isEqualTo: organizationId)
           .where('createdAt',
               isGreaterThanOrEqualTo: Timestamp.fromDate(thirtyDaysAgo))
           .get();
@@ -353,13 +378,19 @@ class AdminFirestoreService {
     }
   }
 
-  /// Get list of unique LGAs for admin's state
-  Future<List<String>> getUniqueLGAs(String adminState) async {
+  /// Get list of unique LGAs for admin's organization, optionally narrowed
+  /// to a single state (used by the add/edit-stakeholder form so the LGA
+  /// picker doesn't mix LGAs from other states in the same organization).
+  Future<List<String>> getUniqueLGAs(String organizationId,
+      [String? stateFilter]) async {
     try {
-      final snapshot = await _firestore
+      Query<Map<String, dynamic>> query = _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState)
-          .get();
+          .where('organizationId', isEqualTo: organizationId);
+      if (stateFilter != null && stateFilter.isNotEmpty) {
+        query = query.where('state', isEqualTo: stateFilter);
+      }
+      final snapshot = await query.get();
 
       final uniqueLGAs =
           snapshot.docs.map((doc) => _readLga(doc.data())).whereType<String>().toSet().toList();
@@ -445,13 +476,18 @@ class AdminFirestoreService {
     }
   }
 
-  /// Get list of unique wards for admin's state (optionally filtered by LGA)
-  Future<List<String>> getUniqueWards(String adminState, [String? lga]) async {
+  /// Get list of unique wards for admin's organization (optionally filtered
+  /// by LGA and/or narrowed to a single state; see [getUniqueLGAs]).
+  Future<List<String>> getUniqueWards(String organizationId,
+      [String? lga, String? stateFilter]) async {
     try {
-      final snapshot = await _firestore
+      Query<Map<String, dynamic>> query = _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: adminState)
-          .get();
+          .where('organizationId', isEqualTo: organizationId);
+      if (stateFilter != null && stateFilter.isNotEmpty) {
+        query = query.where('state', isEqualTo: stateFilter);
+      }
+      final snapshot = await query.get();
 
       final normalizedLgaFilter =
           (lga != null && lga.isNotEmpty) ? LocationUtils.normalizeDisplay(lga) : null;

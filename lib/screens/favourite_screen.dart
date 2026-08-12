@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:risdi/model/model.dart';
-import 'package:risdi/screens/stakeholder_view.dart';
-import 'package:risdi/screens/stakeholder_list_screen.dart';
-import 'package:risdi/services/stakeholder_cache_service.dart';
-import 'package:risdi/services/app_state_service.dart';
+import 'package:impact_konnect/model/model.dart';
+import 'package:impact_konnect/screens/stakeholder_view.dart';
+import 'package:impact_konnect/screens/stakeholder_list_screen.dart';
+import 'package:impact_konnect/services/stakeholder_cache_service.dart';
+import 'package:impact_konnect/services/app_state_service.dart';
 class FavouriteScreen extends StatefulWidget {
   const FavouriteScreen({super.key});
 

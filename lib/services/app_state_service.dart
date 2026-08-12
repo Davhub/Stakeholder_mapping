@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:risdi/model/model.dart';
-import 'package:risdi/services/stakeholder_cache_service.dart';
-import 'package:risdi/model/stakeholder_contact_model.dart';
+import 'package:impact_konnect/model/model.dart';
+import 'package:impact_konnect/services/stakeholder_cache_service.dart';
+import 'package:impact_konnect/model/stakeholder_contact_model.dart';
 
 /// Global app state service to prevent unnecessary reloads
 /// Maintains in-memory cache of dashboard data and favorites

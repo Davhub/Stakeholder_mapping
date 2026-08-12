@@ -1,11 +1,11 @@
-/// Global string constants for the RISDi application.
+/// Global string constants for the Impact Konnect application.
 /// All static texts are centralized here for easy maintenance and localization support.
 class AppStrings {
   // Private constructor to prevent instantiation
   AppStrings._();
 
   // ======================== APP METADATA ========================
-  static const String appName = 'RISDi';
+  static const String appName = 'Impact Konnect';
   static const String appNameFull = 'Routine Immunization Stakeholders Directory';
   static const String appDescription = 'A comprehensive stakeholder mapping and management application';
 
@@ -140,7 +140,7 @@ class AppStrings {
   static const String skip = 'Skip';
   static const String startNow = 'Start Now';
   static const String continueText = 'Continue';
-  static const String onboardingTitle = 'Welcome to RISDi';
+  static const String onboardingTitle = 'Welcome to Impact Konnect';
   static const String onboardingDescription = 'Manage and explore immunization stakeholders efficiently';
 
   // ======================== SUCCESS/ERROR MESSAGES ========================

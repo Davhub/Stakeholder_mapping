@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:risdi/model/model.dart';
-import 'package:risdi/component/recent_stakeholders_manager.dart';
-import 'package:risdi/firebase_services/favorite_service.dart';
-import 'package:risdi/services/stakeholder_cache_service.dart';
-import 'package:risdi/services/app_state_service.dart';
-import 'package:risdi/model/stakeholder_contact_model.dart';
-import 'package:risdi/web_admin/services/activity_tracking_service.dart';
+import 'package:impact_konnect/model/model.dart';
+import 'package:impact_konnect/component/recent_stakeholders_manager.dart';
+import 'package:impact_konnect/firebase_services/favorite_service.dart';
+import 'package:impact_konnect/services/stakeholder_cache_service.dart';
+import 'package:impact_konnect/services/app_state_service.dart';
+import 'package:impact_konnect/model/stakeholder_contact_model.dart';
+import 'package:impact_konnect/web_admin/services/activity_tracking_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class StakeholderView extends StatefulWidget {
@@ -196,10 +196,14 @@ class _StakeholderViewState extends State<StakeholderView>
       scheme: 'tel',
       path: phoneNumber,
     );
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri);
-    } else {
-      throw 'Could not launch $phoneNumber';
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      } else {
+        _showLaunchError('Could not open the dialer for $phoneNumber');
+      }
+    } catch (e) {
+      _showLaunchError('Could not open the dialer for $phoneNumber');
     }
   }
 
@@ -213,11 +217,22 @@ class _StakeholderViewState extends State<StakeholderView>
 
     _trackContact('whatsapp');
     final Uri launchUri = Uri.parse('https://wa.me/$normalized');
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri, mode: LaunchMode.externalApplication);
-    } else {
-      throw 'Could not launch WhatsApp for $whatsappNumber';
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri, mode: LaunchMode.externalApplication);
+      } else {
+        _showLaunchError('Could not open WhatsApp for $whatsappNumber');
+      }
+    } catch (e) {
+      _showLaunchError('Could not open WhatsApp for $whatsappNumber');
     }
+  }
+
+  void _showLaunchError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   // Records a contact event so the web admin DUA report can surface the

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'colors.dart';
 
-/// Centralized text styles for the RISDi application.
+/// Centralized text styles for the Impact Konnect application.
 /// Ensures consistent typography across all screens.
 class AppTextStyles {
   // Private constructor to prevent instantiation

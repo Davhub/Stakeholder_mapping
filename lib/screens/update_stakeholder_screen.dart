@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:risdi/core/utils/location_utils.dart';
+import 'package:impact_konnect/core/utils/location_utils.dart';
 
 class EditStakeholderScreen extends StatefulWidget {
   final String stakeholderId;

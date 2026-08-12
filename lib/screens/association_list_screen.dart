@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:risdi/model/model.dart';
-import 'package:risdi/screens/association_stakeholder_screen.dart';
+import 'package:impact_konnect/model/model.dart';
+import 'package:impact_konnect/screens/association_stakeholder_screen.dart';
 
 class AssociationListScreen extends StatefulWidget {
   const AssociationListScreen({super.key});
@@ -15,6 +15,7 @@ class _AssociationListScreenState extends State<AssociationListScreen> {
   Map<String, int> associationCounts = {};
   bool isLoading = true;
   String? userState;
+  String? userOrganizationId;
 
   @override
   void initState() {
@@ -39,6 +40,7 @@ class _AssociationListScreenState extends State<AssociationListScreen> {
         if (userDoc.exists) {
           setState(() {
             userState = userDoc.data()?['state'] ?? 'Lagos';
+            userOrganizationId = userDoc.data()?['organizationId'] as String?;
           });
         } else {
           setState(() {
@@ -59,11 +61,14 @@ class _AssociationListScreenState extends State<AssociationListScreen> {
     });
 
     try {
-      // Query stakeholders based on user's state
-      final querySnapshot = await FirebaseFirestore.instance
+      // Query stakeholders based on user's state and organization.
+      Query<Map<String, dynamic>> query = FirebaseFirestore.instance
           .collection('stakeholders')
-          .where('state', isEqualTo: userState)
-          .get();
+          .where('state', isEqualTo: userState);
+      if (userOrganizationId != null) {
+        query = query.where('organizationId', isEqualTo: userOrganizationId);
+      }
+      final querySnapshot = await query.get();
 
       // Count stakeholders per association using Stakeholder model
       Map<String, int> counts = {};

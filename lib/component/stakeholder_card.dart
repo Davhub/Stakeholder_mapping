@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:risdi/model/model.dart';
-import 'package:risdi/screens/screen.dart';
-import 'package:risdi/firebase_services/favorite_service.dart';
+import 'package:impact_konnect/model/model.dart';
+import 'package:impact_konnect/screens/screen.dart';
+import 'package:impact_konnect/firebase_services/favorite_service.dart';
 
 class StakeHolderCard extends StatefulWidget {
   final Stakeholder holder;

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:risdi/model/class_stakeholder.dart';
+import 'package:impact_konnect/model/class_stakeholder.dart';
 
 void main() {
   group('Stakeholder.fromFirestore field fallbacks', () {

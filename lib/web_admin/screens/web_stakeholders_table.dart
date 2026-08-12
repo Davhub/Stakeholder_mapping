@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:risdi/web_admin/services/admin_firestore_service.dart';
-import 'package:risdi/web_admin/models/dashboard_models.dart';
-import 'package:risdi/model/model.dart';
+import 'package:impact_konnect/web_admin/services/admin_firestore_service.dart';
+import 'package:impact_konnect/web_admin/models/dashboard_models.dart';
+import 'package:impact_konnect/model/model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class WebStakeholdersTable extends StatefulWidget {
@@ -14,6 +14,7 @@ class WebStakeholdersTable extends StatefulWidget {
 class _WebStakeholdersTableState extends State<WebStakeholdersTable> {
   final AdminFirestoreService _service = AdminFirestoreService();
   String? _adminState;
+  String? _adminOrganizationId;
 
   TableFilterState _filterState = TableFilterState(
     sortBy: 'createdAt',
@@ -37,15 +38,20 @@ class _WebStakeholdersTableState extends State<WebStakeholdersTable> {
 
   Future<void> _initializeData() async {
     _adminState = await _service.getAdminState();
-    if (_adminState != null) {
+    _adminOrganizationId = await _service.getAdminOrganizationId();
+    if (_adminOrganizationId != null) {
       await _loadDropdownData();
       await _loadStakeholders();
     }
   }
 
   Future<void> _loadDropdownData() async {
-    final lgas = await _service.getUniqueLGAs(_adminState!);
-    final wards = await _service.getUniqueWards(_adminState!);
+    // Narrowed to the admin's own state so the LGA/Ward pickers used when
+    // adding a stakeholder can't produce a state/LGA mismatch.
+    final lgas =
+        await _service.getUniqueLGAs(_adminOrganizationId!, _adminState);
+    final wards =
+        await _service.getUniqueWards(_adminOrganizationId!, null, _adminState);
 
     setState(() {
       _lgas = lgas;
@@ -54,7 +60,7 @@ class _WebStakeholdersTableState extends State<WebStakeholdersTable> {
   }
 
   Future<void> _loadStakeholders() async {
-    if (_adminState == null) return;
+    if (_adminOrganizationId == null) return;
 
     setState(() {
       _isLoading = true;
@@ -63,7 +69,7 @@ class _WebStakeholdersTableState extends State<WebStakeholdersTable> {
     try {
       final snapshot = await _service
           .getStakeholdersStream(
-            adminState: _adminState!,
+            organizationId: _adminOrganizationId!,
             limit: _paginationState.itemsPerPage,
             startAfter: _lastDocument,
             lgaFilter: _filterState.lgaFilter,
@@ -105,7 +111,7 @@ class _WebStakeholdersTableState extends State<WebStakeholdersTable> {
   }
 
   Future<void> _performSearch() async {
-    if (_adminState == null || _filterState.searchQuery.isEmpty) {
+    if (_adminOrganizationId == null || _filterState.searchQuery.isEmpty) {
       await _loadStakeholders();
       return;
     }
@@ -116,7 +122,7 @@ class _WebStakeholdersTableState extends State<WebStakeholdersTable> {
 
     try {
       final results = await _service.searchStakeholders(
-        adminState: _adminState!,
+        organizationId: _adminOrganizationId!,
         searchQuery: _filterState.searchQuery,
       );
 
@@ -377,7 +383,7 @@ class _WebStakeholdersTableState extends State<WebStakeholdersTable> {
             ElevatedButton(
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
-                  final stakeholderData = {
+                  final stakeholderData = <String, dynamic>{
                     'fullName': nameController.text.trim(),
                     'phoneNumber': phoneController.text.trim(),
                     'whatsappNumber': whatsappController.text.trim(),
@@ -403,6 +409,10 @@ class _WebStakeholdersTableState extends State<WebStakeholdersTable> {
                         stakeholderData,
                       );
                     } else {
+                      if (_adminOrganizationId != null) {
+                        stakeholderData['organizationId'] =
+                            _adminOrganizationId;
+                      }
                       await _service.createStakeholder(stakeholderData);
                     }
 
@@ -502,7 +512,7 @@ class _WebStakeholdersTableState extends State<WebStakeholdersTable> {
 
   @override
   Widget build(BuildContext context) {
-    if (_adminState == null) {
+    if (_adminOrganizationId == null) {
       return const Center(child: CircularProgressIndicator());
     }
 

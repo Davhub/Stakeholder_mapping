@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:risdi/screens/screen.dart';
+import 'package:impact_konnect/screens/screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -51,28 +51,21 @@ class _AuthScreenState extends State<AuthScreen> {
             email: _email!,
             password: _password!,
           );
-          // Fetch user data to ensure it's available in the app
-          await _firestore
-              .collection('users')
-              .doc(userCredential.user?.uid)
-              .get()
-              .then((doc) {
-            if (doc.exists) {
-              debugPrint('User data found in Firestore: ${doc.data()}');
-            } else {
-              debugPrint('User document does not exist, creating it...');
-              // Create user document if it doesn't exist (fallback)
-              _firestore
-                  .collection('users')
-                  .doc(userCredential.user?.uid)
-                  .set({
-                'email': _email!,
-                'state': 'Lagos', // Default state
-                'role': 'User',
-              });
-            }
-          });
-          _checkUserRole(userCredential.user?.uid);
+          // Ensure a profile document exists before routing. This must be
+          // awaited: routing reads the role straight back, so an
+          // unawaited write here would race and look like a failed login.
+          final uid = userCredential.user!.uid;
+          final doc = await _firestore.collection('users').doc(uid).get();
+          if (!doc.exists) {
+            debugPrint('No profile document for $uid; creating a default one.');
+            await _firestore.collection('users').doc(uid).set({
+              'email': _email!,
+              'state': 'Oyo',
+              'role': 'User',
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+          }
+          await _checkUserRole(uid);
         } else {
           // Registration logic
           if (_password != _confirmPassword) {
@@ -94,16 +87,18 @@ class _AuthScreenState extends State<AuthScreen> {
           );
           await _firestore
               .collection('users')
-              .doc(userCredential.user?.uid)
+              .doc(userCredential.user!.uid)
               .set({
             'email': _email!,
-            'password': _password!,
+            // Never persist the password: Firebase Auth already stores it
+            // securely hashed. Keeping a plaintext copy here would expose
+            // every account to anyone who can read the users collection.
             'state': _selectedState!, // Save the selected state
             'role': 'User', // Default role is 'User'
-            'createdAt': DateTime.now(),
+            'createdAt': FieldValue.serverTimestamp(),
           });
           debugPrint('User registered: $_email with state: $_selectedState');
-          _checkUserRole(userCredential.user?.uid);
+          await _checkUserRole(userCredential.user!.uid);
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -138,45 +133,72 @@ class _AuthScreenState extends State<AuthScreen> {
 
   // Check user role after login or registration
   Future<void> _checkUserRole(String? userId) async {
-    if (userId != null) {
-      User? user = _auth.currentUser;
-
-      // Force a token refresh to get updated claims
-      await user
-          ?.getIdToken(true); // Refresh the token to include the latest claims
-
-      DocumentSnapshot userDoc =
-          await _firestore.collection('users').doc(userId).get();
-      String role = userDoc.get('role') as String;
-
-      debugPrint("User Role: $role"); // Debug line
-
-      if (role == 'Admin') {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (context) => const AdminDashboardScreen(),
-        ));
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const HomeScreenWithNavbar(),
-          ),
-        );
-      }
-    } else {
-      debugPrint("User ID is null"); // Debug line
+    if (userId == null) {
+      debugPrint('User ID is null; cannot route after sign-in.');
+      return;
     }
-  }
 
-  //update user role
-  Future<void> updateUserRole(String userId, String newRole) async {
+    User? user = _auth.currentUser;
+
+    // Force a token refresh to get updated claims
+    await user
+        ?.getIdToken(true); // Refresh the token to include the latest claims
+
+    // Read the role defensively. A missing document or missing/!String
+    // 'role' field used to throw here, and because that isn't a
+    // FirebaseAuthException it escaped the caller's catch block and
+    // surfaced as a silent, unexplained login failure.
+    String role = 'User';
+    bool isActive = true;
     try {
-      // Assuming the user is already authenticated as an Admin
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({
-        'role': newRole,
-      });
-      debugPrint('User role updated to $newRole');
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final data = userDoc.data();
+      final rawRole = data == null ? null : data['role'];
+      if (rawRole is String && rawRole.trim().isNotEmpty) {
+        role = rawRole.trim();
+      } else {
+        debugPrint('No usable role for $userId; defaulting to "User".');
+      }
+      // Absent means active, so existing accounts aren't locked out by
+      // the introduction of this field.
+      final rawActive = data == null ? null : data['active'];
+      if (rawActive is bool) isActive = rawActive;
     } catch (e) {
-      debugPrint('Error updating user role: $e');
+      debugPrint('Could not read role for $userId ($e); defaulting to "User".');
+    }
+
+    // A Super Admin can revoke access by disabling the account. The client
+    // SDK can't disable the underlying auth record, so the block is
+    // enforced here at sign-in.
+    if (!isActive) {
+      await _auth.signOut();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'This account has been disabled. Contact your administrator.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    debugPrint('User Role: $role');
+
+    if (!mounted) return;
+
+    // 'Super Admin' is a superset of 'Admin', so it gets the admin
+    // dashboard too rather than falling through to the plain user home.
+    if (role == 'Admin' || role == 'Super Admin') {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (context) => const AdminDashboardScreen(),
+      ));
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const HomeScreenWithNavbar(),
+        ),
+      );
     }
   }
 
@@ -507,35 +529,35 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 24),
 
                   // Toggle between Login and Register
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _isLogin
-                            ? "Don't have an account? "
-                            : 'Already have an account? ',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _isLogin = !_isLogin;
-                          });
-                        },
-                        child: Text(
-                          _isLogin ? 'Sign Up' : 'Sign In',
-                          style: const TextStyle(
-                            color: Colors.blue,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.center,
+                  //   children: [
+                  //     Text(
+                  //       _isLogin
+                  //           ? "Don't have an account? "
+                  //           : 'Already have an account? ',
+                  //       style: TextStyle(
+                  //         color: Colors.grey[600],
+                  //         fontSize: 14,
+                  //       ),
+                  //     ),
+                  //     TextButton(
+                  //       onPressed: () {
+                  //         setState(() {
+                  //           _isLogin = !_isLogin;
+                  //         });
+                  //       },
+                  //       child: Text(
+                  //         _isLogin ? 'Sign Up' : 'Sign In',
+                  //         style: const TextStyle(
+                  //           color: Colors.blue,
+                  //           fontSize: 14,
+                  //           fontWeight: FontWeight.bold,
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
                 ],
               ),
             ),

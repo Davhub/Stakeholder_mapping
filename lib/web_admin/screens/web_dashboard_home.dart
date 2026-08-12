@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:risdi/web_admin/services/admin_firestore_service.dart';
-import 'package:risdi/web_admin/models/dashboard_models.dart';
-import 'package:risdi/web_admin/widgets/kpi_card.dart';
-import 'package:risdi/model/model.dart';
+import 'package:impact_konnect/web_admin/services/admin_firestore_service.dart';
+import 'package:impact_konnect/web_admin/models/dashboard_models.dart';
+import 'package:impact_konnect/web_admin/widgets/kpi_card.dart';
+import 'package:impact_konnect/model/model.dart';
 
 class WebDashboardHome extends StatefulWidget {
   const WebDashboardHome({Key? key}) : super(key: key);
@@ -15,7 +15,7 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
   final AdminFirestoreService _service = AdminFirestoreService();
   late Future<DashboardKPIs> _kpisFuture;
   Stream<List<Stakeholder>>? _recentStakeholdersStream;
-  String? _adminState;
+  String? _adminOrganizationId;
   bool _isInitializing = true;
 
   @override
@@ -26,15 +26,15 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
 
   Future<void> _loadDashboardData() async {
     try {
-      _adminState = await _service.getAdminState();
-      if (_adminState != null) {
+      _adminOrganizationId = await _service.getAdminOrganizationId();
+      if (_adminOrganizationId != null) {
         setState(() {
           _kpisFuture = _loadKPIs();
           // Use createdAt ordering for recent stakeholders (descending = newest first)
           // Note: This requires a Firestore composite index
           _recentStakeholdersStream = _service
               .getStakeholdersStream(
-                adminState: _adminState!,
+                organizationId: _adminOrganizationId!,
                 limit: 5,
                 orderBy: 'createdAt',
                 descending: true,
@@ -63,7 +63,7 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
   }
 
   Future<DashboardKPIs> _loadKPIs() async {
-    if (_adminState == null) {
+    if (_adminOrganizationId == null) {
       return DashboardKPIs(
         totalStakeholders: 0,
         totalLGAs: 0,
@@ -72,11 +72,12 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
       );
     }
 
-    final totalStakeholders = await _service.getTotalStakeholders(_adminState!);
-    final totalLGAs = await _service.getTotalLGAs(_adminState!);
-    final totalWards = await _service.getTotalWards(_adminState!);
+    final totalStakeholders =
+        await _service.getTotalStakeholders(_adminOrganizationId!);
+    final totalLGAs = await _service.getTotalLGAs(_adminOrganizationId!);
+    final totalWards = await _service.getTotalWards(_adminOrganizationId!);
     final recentlyAdded =
-        await _service.getRecentlyAddedStakeholders(_adminState!);
+        await _service.getRecentlyAddedStakeholders(_adminOrganizationId!);
 
     // Calculate growth percentage (comparing with previous period)
     // For now, using a simple calculation based on recent additions
@@ -112,7 +113,7 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
       );
     }
 
-    if (_adminState == null) {
+    if (_adminOrganizationId == null) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -120,7 +121,7 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
             Icon(Icons.error_outline, size: 64, color: Colors.red),
             SizedBox(height: 16),
             Text(
-              'Unable to load admin state',
+              'Unable to load admin organization',
               style: TextStyle(fontSize: 18, color: Colors.red),
             ),
           ],
@@ -221,7 +222,7 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Managing stakeholders for $_adminState State',
+                  'Managing stakeholders across your organization',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[700],
@@ -241,7 +242,7 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
   }
 
   Future<void> _runBackfillTimestamps() async {
-    if (_adminState == null) return;
+    if (_adminOrganizationId == null) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -270,7 +271,7 @@ class _WebDashboardHomeState extends State<WebDashboardHome> {
     if (confirmed != true || !mounted) return;
 
     final updatedCount =
-        await _service.backfillMissingTimestamps(_adminState!);
+        await _service.backfillMissingTimestamps(_adminOrganizationId!);
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

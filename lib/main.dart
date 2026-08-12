@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:risdi/model/stakeholder_contact_model.dart';
-import 'package:risdi/screens/screen.dart';
-import 'package:risdi/web_admin/screens/web_admin_dashboard.dart';
-import 'package:risdi/component/auth_form.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:impact_konnect/firebase_options.dart';
+import 'package:impact_konnect/model/stakeholder_contact_model.dart';
+import 'package:impact_konnect/screens/screen.dart';
+import 'package:impact_konnect/web_admin/screens/web_admin_dashboard.dart';
+import 'package:impact_konnect/component/auth_form.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:risdi/services/stakeholder_cache_service.dart';
-import 'package:risdi/core/constants/constants.dart';
+import 'package:impact_konnect/services/stakeholder_cache_service.dart';
+import 'package:impact_konnect/core/constants/constants.dart';
 
-/// Roles permitted to use the web admin dashboard. Regular mobile-app
-/// signups default to the 'User' role and must never see this UI, even
-/// though Firestore rules already block them from writing any data.
-const List<String> kWebAdminRoles = ['Admin', 'Super Admin', 'Analyst'];
+/// Roles permitted to use the web admin dashboard. 'Admin' is deliberately
+/// excluded: it's the mobile field-admin role (view stakeholders, add/edit
+/// them from the app) and must not double as web dashboard access, which
+/// carries far broader privileges (user/role management, audit logs,
+/// reports). Regular mobile-app signups default to the 'User' role and
+/// must never see this UI either, even though Firestore rules already
+/// block them from writing any data.
+const List<String> kWebAdminRoles = ['Super Admin', 'Analyst'];
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,13 +46,20 @@ void main() async {
       debugPrint('Error initializing local services: $e');
     }
   } else {
-    // Web platform - just get onboarding status
+    // Web platform: WebAuthWrapper uses FirebaseAuth/Firestore directly, so
+    // Firebase must be initialized here up front (mobile does this later,
+    // inside SplashScreen, since it shows a splash first).
     try {
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      }
       SharedPreferences prefs = await SharedPreferences.getInstance();
       hasSeenOnboarding = prefs.getBool('seenOnboarding') ?? false;
       hasAcceptedLegalTerms = prefs.getBool('acceptedLegalTerms') ?? false;
     } catch (e) {
-      debugPrint('Error getting onboarding status: $e');
+      debugPrint('Error initializing web platform: $e');
     }
   }
 

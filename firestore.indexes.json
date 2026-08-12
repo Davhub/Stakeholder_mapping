@@ -5,7 +5,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "state",
+          "fieldPath": "organizationId",
           "order": "ASCENDING"
         },
         {
@@ -19,7 +19,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "state",
+          "fieldPath": "organizationId",
           "order": "ASCENDING"
         },
         {
@@ -33,11 +33,11 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "state",
+          "fieldPath": "organizationId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "lg",
+          "fieldPath": "LGA",
           "order": "ASCENDING"
         },
         {
@@ -51,11 +51,11 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "state",
+          "fieldPath": "organizationId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "lg",
+          "fieldPath": "LGA",
           "order": "ASCENDING"
         },
         {

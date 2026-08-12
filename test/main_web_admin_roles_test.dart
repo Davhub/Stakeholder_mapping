@@ -1,10 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:risdi/main.dart';
+import 'package:impact_konnect/main.dart';
 
 void main() {
-  test('kWebAdminRoles only grants access to elevated roles, never the '
-      'default mobile-signup role', () {
-    expect(kWebAdminRoles, containsAll(['Admin', 'Super Admin', 'Analyst']));
+  test('kWebAdminRoles grants access to web-dashboard roles only, never '
+      'the mobile field-admin role or the default mobile-signup role', () {
+    expect(kWebAdminRoles, containsAll(['Super Admin', 'Analyst']));
+    expect(kWebAdminRoles, isNot(contains('Admin')));
     expect(kWebAdminRoles, isNot(contains('User')));
   });
 }

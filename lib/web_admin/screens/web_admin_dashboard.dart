@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:risdi/web_admin/screens/web_dashboard_home.dart';
-import 'package:risdi/web_admin/screens/web_stakeholders_table.dart';
-import 'package:risdi/web_admin/screens/web_analytics_screen.dart';
-import 'package:risdi/web_admin/screens/web_profile_screen.dart';
-import 'package:risdi/component/auth_form.dart';
+import 'package:impact_konnect/web_admin/screens/web_dashboard_home.dart';
+import 'package:impact_konnect/web_admin/screens/web_stakeholders_table.dart';
+import 'package:impact_konnect/web_admin/screens/web_analytics_screen.dart';
+import 'package:impact_konnect/web_admin/screens/web_profile_screen.dart';
+import 'package:impact_konnect/web_admin/screens/web_users_screen.dart';
+import 'package:impact_konnect/web_admin/services/admin_firestore_service.dart';
+import 'package:impact_konnect/component/auth_form.dart';
 /// Main Web Admin Dashboard with responsive sidebar layout
 class WebAdminDashboard extends StatefulWidget {
   const WebAdminDashboard({Key? key}) : super(key: key);
@@ -17,42 +19,74 @@ class _WebAdminDashboardState extends State<WebAdminDashboard> {
   int _selectedIndex = 0;
   bool _isSidebarExpanded = true;
 
-  final List<_NavigationItem> _navigationItems = [
-    _NavigationItem(
-      icon: Icons.dashboard_rounded,
-      label: 'Dashboard',
-      route: '/dashboard',
-    ),
-    _NavigationItem(
-      icon: Icons.people_rounded,
-      label: 'Stakeholders',
-      route: '/stakeholders',
-    ),
-    _NavigationItem(
-      icon: Icons.analytics_rounded,
-      label: 'Analytics',
-      route: '/analytics',
-    ),
-    _NavigationItem(
-      icon: Icons.person_rounded,
-      label: 'Profile',
-      route: '/profile',
-    ),
-  ];
+  final AdminFirestoreService _adminService = AdminFirestoreService();
+
+  /// Whether the signed-in account may administer other users. Starts
+  /// false so the Users tab is never briefly visible to a non-Super-Admin
+  /// while the role is still loading.
+  bool _canManageUsers = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPermissions();
+  }
+
+  Future<void> _loadPermissions() async {
+    try {
+      final profile = await _adminService.getAdminProfile();
+      final role = profile?['role'];
+      if (mounted && role is String && role.trim() == 'Super Admin') {
+        setState(() => _canManageUsers = true);
+      }
+    } catch (e) {
+      debugPrint('Could not resolve dashboard permissions: $e');
+    }
+  }
+
+  List<_NavigationItem> get _navigationItems => [
+        _NavigationItem(
+          icon: Icons.dashboard_rounded,
+          label: 'Dashboard',
+          route: '/dashboard',
+          builder: () => const WebDashboardHome(),
+        ),
+        _NavigationItem(
+          icon: Icons.people_rounded,
+          label: 'Stakeholders',
+          route: '/stakeholders',
+          builder: () => const WebStakeholdersTable(),
+        ),
+        _NavigationItem(
+          icon: Icons.analytics_rounded,
+          label: 'Analytics',
+          route: '/analytics',
+          builder: () => const WebAnalyticsScreen(),
+        ),
+        // User administration is Super Admin only. Firestore rules enforce
+        // this server-side too; hiding the tab just avoids showing an
+        // Analyst a screen that would only ever error.
+        if (_canManageUsers)
+          _NavigationItem(
+            icon: Icons.manage_accounts_rounded,
+            label: 'Users',
+            route: '/users',
+            builder: () => const WebUsersScreen(),
+          ),
+        _NavigationItem(
+          icon: Icons.person_rounded,
+          label: 'Profile',
+          route: '/profile',
+          builder: () => const WebProfileScreen(),
+        ),
+      ];
 
   Widget _getScreen(int index) {
-    switch (index) {
-      case 0:
-        return const WebDashboardHome();
-      case 1:
-        return const WebStakeholdersTable();
-      case 2:
-        return const WebAnalyticsScreen();
-      case 3:
-        return const WebProfileScreen();
-      default:
-        return const WebDashboardHome();
+    final items = _navigationItems;
+    if (index < 0 || index >= items.length) {
+      return const WebDashboardHome();
     }
+    return items[index].builder();
   }
 
   void _handleLogout() async {
@@ -380,9 +414,15 @@ class _NavigationItem {
   final String label;
   final String route;
 
+  /// Each item owns the screen it shows. Keeping them together means a
+  /// conditionally-hidden tab (e.g. Super-Admin-only Users) can't shift a
+  /// separate switch statement out of alignment.
+  final Widget Function() builder;
+
   _NavigationItem({
     required this.icon,
     required this.label,
     required this.route,
+    required this.builder,
   });
 }

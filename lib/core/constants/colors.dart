@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Global color constants for the RISDi application.
+/// Global color constants for the Impact Konnect application.
 /// All colors are centralized here for easy theming and consistency.
 class AppColors {
   // Private constructor to prevent instantiation

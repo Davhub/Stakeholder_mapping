@@ -1,4 +1,4 @@
-/// Global size constants for the RISDi application.
+/// Global size constants for the Impact Konnect application.
 /// Includes dimensions for common UI elements.
 class AppSizes {
   // Private constructor to prevent instantiation

@@ -3,20 +3,17 @@
     "platforms": {
       "android": {
         "default": {
-          "projectId": "mapping-tool-6947c",
-          "appId": "1:994836624683:android:dcf765cc3aa4271b22016e",
+          "projectId": "impactkonnect-app",
+          "appId": "1:825323159536:android:a5764f3f761f57e460e735",
           "fileOutput": "android/app/google-services.json"
         }
       },
       "dart": {
         "lib/firebase_options.dart": {
-          "projectId": "mapping-tool-6947c",
+          "projectId": "impactkonnect-app",
           "configurations": {
-            "android": "1:994836624683:android:dcf765cc3aa4271b22016e",
-            "ios": "1:994836624683:ios:44def8e6c8d4dde422016e",
-            "macos": "1:994836624683:ios:44def8e6c8d4dde422016e",
-            "web": "1:994836624683:web:d85959dd4760b5ac22016e",
-            "windows": "1:994836624683:web:56f5969fc6cc804a22016e"
+            "android": "1:825323159536:android:a5764f3f761f57e460e735",
+            "web": "1:825323159536:web:9d82114e82d4f67660e735"
           }
         }
       }
@@ -27,6 +24,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
+    "target": "default",
     "public": "build/web",
     "ignore": [
       "firebase.json",

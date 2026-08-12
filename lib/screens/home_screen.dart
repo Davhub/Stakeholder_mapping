@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive/hive.dart';
-import 'package:risdi/component/recent_stakeholders_manager.dart';
-import 'package:risdi/model/model.dart';
-import 'package:risdi/screens/stakeholder_list_screen.dart';
-import 'package:risdi/screens/stakeholder_view.dart';
-import 'package:risdi/screens/association_list_screen.dart';
-import 'package:risdi/screens/ward_list_screen.dart';
-import 'package:risdi/screens/navbar_wrappers.dart';
-import 'package:risdi/services/stakeholder_cache_service.dart';
-import 'package:risdi/services/app_state_service.dart';
+import 'package:impact_konnect/component/recent_stakeholders_manager.dart';
+import 'package:impact_konnect/model/model.dart';
+import 'package:impact_konnect/screens/stakeholder_list_screen.dart';
+import 'package:impact_konnect/screens/stakeholder_view.dart';
+import 'package:impact_konnect/screens/association_list_screen.dart';
+import 'package:impact_konnect/screens/ward_list_screen.dart';
+import 'package:impact_konnect/screens/navbar_wrappers.dart';
+import 'package:impact_konnect/services/stakeholder_cache_service.dart';
+import 'package:impact_konnect/services/app_state_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late AppStateService _appStateService;
   List<Map<String, dynamic>> recentStakeholders = [];
   String? currentUserState;
+  String? currentUserOrganizationId;
   bool isLoading = true;
   int totalStakeholders = 0;
   int totalFavorites = 0;
@@ -72,6 +73,8 @@ class _HomeScreenState extends State<HomeScreen> {
         if (userDoc.exists) {
           setState(() {
             currentUserState = userDoc.data()?['state'] ?? 'Lagos';
+            currentUserOrganizationId =
+                userDoc.data()?['organizationId'] as String?;
           });
         } else {
           setState(() {
@@ -100,10 +103,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Load fresh data from Firestore in background (non-blocking)
       try {
-        final querySnapshot = await FirebaseFirestore.instance
+        Query<Map<String, dynamic>> query = FirebaseFirestore.instance
             .collection('stakeholders')
-            .where('state', isEqualTo: currentUserState)
-            .get();
+            .where('state', isEqualTo: currentUserState);
+        if (currentUserOrganizationId != null) {
+          query = query.where('organizationId',
+              isEqualTo: currentUserOrganizationId);
+        }
+        final querySnapshot = await query.get();
 
         List<Stakeholder> stakeholders = querySnapshot.docs
             .map((doc) => Stakeholder.fromFirestore(doc))

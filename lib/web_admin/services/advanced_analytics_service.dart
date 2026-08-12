@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:risdi/web_admin/models/analytics_models.dart';
+import 'package:impact_konnect/web_admin/models/analytics_models.dart';
 
 /// Advanced analytics service for comprehensive data analysis
 class AdvancedAnalyticsService {

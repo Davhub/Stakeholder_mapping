@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:risdi/component/custom_navbar.dart';
-import 'package:risdi/screens/screen.dart';
+import 'package:impact_konnect/component/custom_navbar.dart';
+import 'package:impact_konnect/screens/screen.dart';
 
 class DirectoryScreenWithNavbar extends StatelessWidget {
   const DirectoryScreenWithNavbar({super.key});

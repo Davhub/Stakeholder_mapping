@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:risdi/screens/legal_acceptance_screen.dart';
+import 'package:impact_konnect/screens/legal_acceptance_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -70,18 +70,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          const Flexible(
-                            child: Text(
-                              'Stakeholder Manager',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
+                          
                           if (_currentPage < onboardingPages.length - 1)
                             TextButton(
                               onPressed: _completeOnboarding,
@@ -96,6 +87,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ],
                       ),
                     ),
+
+                    SizedBox (height:100),
 
                     SizedBox(
                       height: constraints.maxHeight > 640

@@ -10,34 +10,99 @@ service cloud.firestore {
     function getUserState() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.state;
     }
-    
-    // Stakeholders - state-scoped access
+
+    function getUserOrganizationId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.organizationId;
+    }
+
+    // Existence-checked so a signed-in account with no profile document
+    // yet evaluates to false instead of erroring out the whole rule.
+    function isSuperAdmin() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+    }
+
+    // Web-dashboard roles (Super Admin, Analyst) see their whole
+    // organization across every state; mobile roles (Admin, User) are
+    // additionally confined to their own assigned state.
+    function isOrgWideRole() {
+      return getUserRole() == 'Super Admin' || getUserRole() == 'Analyst';
+    }
+
+    // Stakeholders - organization-scoped access; state-scoped on top of
+    // that for mobile Admin/User roles.
     match /stakeholders/{stakeholderId} {
-      allow read: if request.auth != null && 
-                     getUserState() == resource.data.state;
-      
-      allow create: if request.auth != null && 
-                       getUserRole() == 'Admin' &&
-                       request.resource.data.state == getUserState();
-      
-      allow update: if request.auth != null && 
-                       getUserRole() == 'Admin' &&
-                       resource.data.state == getUserState();
-      
-      allow delete: if request.auth != null && 
-                       getUserRole() == 'Admin' &&
-                       resource.data.state == getUserState();
+      allow read: if request.auth != null &&
+                     getUserOrganizationId() == resource.data.organizationId &&
+                     (isOrgWideRole() || getUserState() == resource.data.state);
+
+      allow create: if request.auth != null &&
+                       request.resource.data.organizationId == getUserOrganizationId() &&
+                       (getUserRole() == 'Super Admin' ||
+                        (getUserRole() == 'Admin' &&
+                         request.resource.data.state == getUserState()));
+
+      allow update: if request.auth != null &&
+                       resource.data.organizationId == getUserOrganizationId() &&
+                       (getUserRole() == 'Super Admin' ||
+                        (getUserRole() == 'Admin' &&
+                         resource.data.state == getUserState()));
+
+      allow delete: if request.auth != null &&
+                       resource.data.organizationId == getUserOrganizationId() &&
+                       (getUserRole() == 'Super Admin' ||
+                        (getUserRole() == 'Admin' &&
+                         resource.data.state == getUserState()));
     }
     
-    // Users collection
+    // Users collection.
+    // Super Admin needs read/create across the whole collection to run the
+    // user-management screen (list users, provision accounts, assign
+    // roles). Everyone else is still confined to their own document.
+    // The `request.auth.uid == userId` check is deliberately first so a
+    // brand-new account creating its own profile never has to resolve
+    // isSuperAdmin() against a document that doesn't exist yet.
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && 
-                       (request.auth.uid == userId || getUserRole() == 'Super Admin');
-      allow delete: if request.auth != null && getUserRole() == 'Super Admin';
+      // Super Admin's reach is confined to their own organization's users -
+      // otherwise one org's Super Admin could browse/manage another org's
+      // staff accounts.
+      allow read: if request.auth != null &&
+                     (request.auth.uid == userId ||
+                      (isSuperAdmin() &&
+                       resource.data.organizationId == getUserOrganizationId()));
+
+      // Self-registration may only ever mint a plain, active 'User'.
+      // Without this clamp a client could simply POST itself a document
+      // with role 'Super Admin' and take over the platform.
+      allow create: if request.auth != null && (
+                       (isSuperAdmin() &&
+                        request.resource.data.organizationId == getUserOrganizationId()) ||
+                       (request.auth.uid == userId &&
+                        request.resource.data.role == 'User' &&
+                        (!('active' in request.resource.data) ||
+                         request.resource.data.active == true))
+                     );
+
+      // A user may edit their own profile, but never the fields that
+      // grant privilege or widen data access. 'state' is privileged
+      // because it decides which stakeholders the account can read, so
+      // self-editing it would be a data-scoping bypass.
+      allow update: if request.auth != null && (
+                       (isSuperAdmin() &&
+                        resource.data.organizationId == getUserOrganizationId()) ||
+                       (request.auth.uid == userId &&
+                        !request.resource.data.diff(resource.data)
+                             .affectedKeys()
+                             .hasAny(['role', 'active', 'state',
+                                      'organizationId', 'createdBy'].toSet()))
+                     );
+
+      allow delete: if request.auth != null &&
+                       (request.auth.uid == userId ||
+                        (isSuperAdmin() &&
+                         resource.data.organizationId == getUserOrganizationId()));
     }
-    
+
     // Roles - admin only
     match /roles/{roleId} {
       allow read: if request.auth != null;
@@ -50,86 +115,70 @@ service cloud.firestore {
                        !resource.data.isSystemRole;
     }
     
-    // Audit logs - append-only, read by authorized users
+    // Audit logs - append-only, read by web-dashboard roles only.
+    // 'Admin' (mobile field-admin) is deliberately excluded - see
+    // kWebAdminRoles in lib/main.dart for the rationale.
     match /audit_logs/{auditLogId} {
-      allow read: if request.auth != null && 
+      allow read: if request.auth != null &&
                      (getUserRole() == 'Super Admin' ||
-                      getUserRole() == 'Admin' ||
                       getUserRole() == 'Analyst');
       allow create: if request.auth != null;
       allow update, delete: if false; // Immutable audit trail
     }
-    
-    // Activity events - tracking data, read by analysts
+
+    // Activity events - tracking data, read by web-dashboard roles only.
     match /activity_events/{eventId} {
-      allow read: if request.auth != null && 
+      allow read: if request.auth != null &&
                      (getUserRole() == 'Super Admin' ||
-                      getUserRole() == 'Admin' ||
                       getUserRole() == 'Analyst');
       allow create: if request.auth != null;
       allow update, delete: if false; // Immutable event trail
     }
-    
-    // User sessions - tracking data
+
+    // User sessions - tracking data, read by web-dashboard roles only.
     match /user_sessions/{sessionId} {
-      allow read: if request.auth != null && 
+      allow read: if request.auth != null &&
                      (getUserRole() == 'Super Admin' ||
-                      getUserRole() == 'Admin' ||
                       getUserRole() == 'Analyst');
       allow create: if request.auth != null;
-      allow update: if request.auth != null && 
+      allow update: if request.auth != null &&
                        request.auth.uid == resource.data.userId;
       allow delete: if false;
     }
-    
-    // Reports - managed by authorized users
+
+    // Reports - managed by web-dashboard roles only.
     match /reports/{reportId} {
-      allow read: if request.auth != null && 
+      allow read: if request.auth != null &&
                      (getUserRole() == 'Super Admin' ||
-                      getUserRole() == 'Admin' ||
                       getUserRole() == 'Analyst');
-      allow create: if request.auth != null && 
+      allow create: if request.auth != null &&
                        (getUserRole() == 'Super Admin' ||
-                        getUserRole() == 'Admin' ||
                         getUserRole() == 'Analyst');
-      allow update: if request.auth != null && 
+      allow update: if request.auth != null &&
                        (getUserRole() == 'Super Admin' ||
-                        getUserRole() == 'Admin' ||
                         getUserRole() == 'Analyst');
-      allow delete: if request.auth != null && 
-                       (getUserRole() == 'Super Admin' ||
-                        getUserRole() == 'Admin');
+      allow delete: if request.auth != null &&
+                       getUserRole() == 'Super Admin';
     }
-    
-    // Generated reports - export artifacts
+
+    // Generated reports - export artifacts, web-dashboard roles only.
     match /generated_reports/{reportId} {
-      allow read: if request.auth != null && 
+      allow read: if request.auth != null &&
                      (getUserRole() == 'Super Admin' ||
-                      getUserRole() == 'Admin' ||
                       getUserRole() == 'Analyst');
-      allow create: if request.auth != null && 
+      allow create: if request.auth != null &&
                        (getUserRole() == 'Super Admin' ||
-                        getUserRole() == 'Admin' ||
                         getUserRole() == 'Analyst');
-      allow delete: if request.auth != null && 
-                       (getUserRole() == 'Super Admin' ||
-                        getUserRole() == 'Admin');
+      allow delete: if request.auth != null &&
+                       getUserRole() == 'Super Admin';
     }
-    
-    // Report schedules - recurring report configuration
+
+    // Report schedules - recurring report configuration, Super Admin only.
     match /report_schedules/{scheduleId} {
-      allow read: if request.auth != null && 
-                     (getUserRole() == 'Super Admin' ||
-                      getUserRole() == 'Admin');
-      allow create: if request.auth != null && 
-                       (getUserRole() == 'Super Admin' ||
-                        getUserRole() == 'Admin');
-      allow update: if request.auth != null && 
-                       (getUserRole() == 'Super Admin' ||
-                        getUserRole() == 'Admin');
-      allow delete: if request.auth != null && 
-                       (getUserRole() == 'Super Admin' ||
-                        getUserRole() == 'Admin');
+      allow read: if request.auth != null && getUserRole() == 'Super Admin';
+      allow create: if request.auth != null && getUserRole() == 'Super Admin';
+      allow update: if request.auth != null && getUserRole() == 'Super Admin';
+      allow delete: if request.auth != null && getUserRole() == 'Super Admin';
     }
 
     // Favorites - user-specific bookmarks

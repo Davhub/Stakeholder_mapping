@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:risdi/web_admin/models/audit_models.dart';
+import 'package:impact_konnect/web_admin/models/audit_models.dart';
 
 /// Tracks user activity events and sessions for analytics
 class ActivityTrackingService {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:risdi/core/utils/location_utils.dart';
+import 'package:impact_konnect/core/utils/location_utils.dart';
 
 void main() {
   group('LocationUtils.normalizeDisplay', () {

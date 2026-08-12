@@ -1,0 +1,25 @@
+{
+  "projects": {
+    "default": "impactkonnect-app"
+  },
+  "targets": {
+    "mapping-tool-6947c": {
+      "hosting": {
+        "impact-connect": [
+          "impactconnect-app"
+        ],
+        "default": [
+          "mapping-tool-6947c"
+        ]
+      }
+    },
+    "impactkonnect-app": {
+      "hosting": {
+        "default": [
+          "impactkonnect-app"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

@@ -3,13 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:risdi/component/component.dart';
-import 'package:risdi/model/model.dart';
-import 'package:risdi/screens/stakeholder_view.dart';
-import 'package:risdi/services/stakeholder_cache_service.dart';
-import 'package:risdi/services/app_state_service.dart';
-import 'package:risdi/services/location_service.dart';
-import 'package:risdi/core/utils/location_utils.dart';
+import 'package:impact_konnect/component/component.dart';
+import 'package:impact_konnect/model/model.dart';
+import 'package:impact_konnect/screens/stakeholder_view.dart';
+import 'package:impact_konnect/services/stakeholder_cache_service.dart';
+import 'package:impact_konnect/services/app_state_service.dart';
+import 'package:impact_konnect/services/location_service.dart';
+import 'package:impact_konnect/core/utils/location_utils.dart';
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -29,6 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   StreamSubscription? firestoreSubscription;
 
   String? currentUserState;
+  String? currentUserOrganizationId;
   String? selectedLg;
   String? selectedWard;
 
@@ -156,6 +157,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (docSnapshot.exists) {
           final userData = docSnapshot.data();
           currentUserState = userData?['state'] as String?;
+          currentUserOrganizationId = userData?['organizationId'] as String?;
           debugPrint('📍 [STATE] User document fields: ${userData?.keys.toList()}');
           debugPrint('📍 [STATE] User state retrieved: "$currentUserState" (type: ${currentUserState.runtimeType}, length: ${(currentUserState ?? '').length})');
           
@@ -232,12 +234,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void setFirestoreListener() {
-    debugPrint('🔄 [FIRESTORE-QUERY] Setting up listener for state: $currentUserState');
-    firestoreSubscription = FirebaseFirestore.instance
+    debugPrint('🔄 [FIRESTORE-QUERY] Setting up listener for state: $currentUserState, org: $currentUserOrganizationId');
+    Query<Map<String, dynamic>> query = FirebaseFirestore.instance
         .collection('stakeholders')
-        .where('state', isEqualTo: currentUserState)
-        .snapshots()
-        .listen((snapshot) async {
+        .where('state', isEqualTo: currentUserState);
+    // Scope to this user's own organization too, so a future second
+    // organization sharing the same state name never bleeds into view.
+    // Guarded on non-null so accounts that predate this field (before the
+    // Organization 1 migration finishes) aren't zeroed out.
+    if (currentUserOrganizationId != null) {
+      query = query.where('organizationId', isEqualTo: currentUserOrganizationId);
+    }
+    firestoreSubscription = query.snapshots().listen((snapshot) async {
       debugPrint('📊 [FIRESTORE-DATA] Received ${snapshot.docs.length} stakeholders for state: $currentUserState');
       List<Stakeholder> fetchedStakeholders = snapshot.docs
           .map((doc) => Stakeholder.fromFirestore(

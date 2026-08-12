@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:risdi/core/utils/location_utils.dart';
-import 'package:risdi/model/model.dart';
+import 'package:impact_konnect/core/utils/location_utils.dart';
+import 'package:impact_konnect/model/model.dart';
 import 'location_service.dart';
 
 /// Enhanced search and filtering service that works with dynamic location data
@@ -19,16 +19,20 @@ class DynamicSearchService {
     String? lga,
     String? ward,
     String? searchQuery,
+    String? organizationId,
   }) async {
     try {
       final normalizedState = LocationUtils.normalizeDisplay(state);
       final normalizedLga = lga != null ? LocationUtils.normalizeDisplay(lga) : null;
       final normalizedWard = ward != null ? LocationUtils.normalizeDisplay(ward) : null;
 
-      final snapshot = await _firestore
+      Query<Map<String, dynamic>> query = _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: normalizedState)
-          .get();
+          .where('state', isEqualTo: normalizedState);
+      if (organizationId != null) {
+        query = query.where('organizationId', isEqualTo: organizationId);
+      }
+      final snapshot = await query.get();
 
       List<Stakeholder> stakeholders = snapshot.docs
           .map((doc) => Stakeholder.fromFirestore(doc))
@@ -93,15 +97,21 @@ class DynamicSearchService {
     required String state,
     String? lga,
     String? ward,
+    String? organizationId,
   }) {
     try {
       final normalizedState = LocationUtils.normalizeDisplay(state);
       final normalizedLga = lga != null ? LocationUtils.normalizeDisplay(lga) : null;
       final normalizedWard = ward != null ? LocationUtils.normalizeDisplay(ward) : null;
 
-      return _firestore
+      Query<Map<String, dynamic>> query = _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: normalizedState)
+          .where('state', isEqualTo: normalizedState);
+      if (organizationId != null) {
+        query = query.where('organizationId', isEqualTo: organizationId);
+      }
+
+      return query
           .snapshots()
           .map((snapshot) {
             return snapshot.docs
@@ -130,16 +140,20 @@ class DynamicSearchService {
     required String state,
     String? lga,
     String? ward,
+    String? organizationId,
   }) async {
     try {
       final normalizedState = LocationUtils.normalizeDisplay(state);
       final normalizedLga = lga != null ? LocationUtils.normalizeDisplay(lga) : null;
       final normalizedWard = ward != null ? LocationUtils.normalizeDisplay(ward) : null;
 
-      final snapshot = await _firestore
+      Query<Map<String, dynamic>> query = _firestore
           .collection('stakeholders')
-          .where('state', isEqualTo: normalizedState)
-          .get();
+          .where('state', isEqualTo: normalizedState);
+      if (organizationId != null) {
+        query = query.where('organizationId', isEqualTo: organizationId);
+      }
+      final snapshot = await query.get();
 
       return snapshot.docs.where((doc) {
         final stakeholder = Stakeholder.fromFirestore(doc);

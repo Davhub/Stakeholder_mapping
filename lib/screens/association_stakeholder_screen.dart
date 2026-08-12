@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive/hive.dart';
-import 'package:risdi/model/model.dart';
-import 'package:risdi/screens/stakeholder_view.dart';
+import 'package:impact_konnect/model/model.dart';
+import 'package:impact_konnect/screens/stakeholder_view.dart';
 
 class AssociationStakeholderScreen extends StatefulWidget {
   final String associationName;
@@ -25,6 +25,7 @@ class _AssociationStakeholderScreenState
   String searchQuery = '';
   bool isLoading = true;
   String? userState;
+  String? userOrganizationId;
 
   final TextEditingController searchController = TextEditingController();
 
@@ -57,6 +58,7 @@ class _AssociationStakeholderScreenState
         if (userDoc.exists) {
           setState(() {
             userState = userDoc.data()?['state'] ?? 'Lagos';
+            userOrganizationId = userDoc.data()?['organizationId'] as String?;
           });
         } else {
           setState(() {
@@ -93,11 +95,14 @@ class _AssociationStakeholderScreenState
       }
 
       // Load from Firestore
-      final querySnapshot = await FirebaseFirestore.instance
+      Query<Map<String, dynamic>> query = FirebaseFirestore.instance
           .collection('stakeholders')
           .where('state', isEqualTo: userState)
-          .where('association', isEqualTo: widget.associationName)
-          .get();
+          .where('association', isEqualTo: widget.associationName);
+      if (userOrganizationId != null) {
+        query = query.where('organizationId', isEqualTo: userOrganizationId);
+      }
+      final querySnapshot = await query.get();
 
       List<Stakeholder> firestoreStakeholders = querySnapshot.docs
           .map((doc) => Stakeholder.fromFirestore(doc))

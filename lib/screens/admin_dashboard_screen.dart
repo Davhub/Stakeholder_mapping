@@ -2,12 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:risdi/component/component.dart';
-import 'package:risdi/screens/screen.dart';
-import 'package:risdi/services/app_state_service.dart';
-import 'package:risdi/core/utils/location_utils.dart';
-import 'package:risdi/services/stakeholder_cache_service.dart';
-import 'package:risdi/services/location_service.dart';
+import 'package:impact_konnect/component/component.dart';
+import 'package:impact_konnect/screens/screen.dart';
+import 'package:impact_konnect/services/app_state_service.dart';
+import 'package:impact_konnect/core/utils/location_utils.dart';
+import 'package:impact_konnect/services/stakeholder_cache_service.dart';
+import 'package:impact_konnect/services/location_service.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({
@@ -24,6 +24,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String selectedLGA = '';
   String selectedWard = '';
   String adminState = '';
+  String? adminOrganizationId;
   int totalStakeholderCount = 0;
   String _searchQuery = '';
 
@@ -160,6 +161,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         if (mounted) {
           setState(() {
             adminState = state;
+            adminOrganizationId = userData?['organizationId'] as String?;
             selectedLGA = '';
             selectedWard = '';
             availableLGAs = [];
@@ -221,7 +223,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
 
     final stakeholders = FirebaseFirestore.instance.collection('stakeholders');
-    final query = stakeholders.where('state', isEqualTo: adminState);
+    Query<Map<String, dynamic>> query =
+        stakeholders.where('state', isEqualTo: adminState);
+    if (adminOrganizationId != null) {
+      query = query.where('organizationId', isEqualTo: adminOrganizationId);
+    }
 
     debugPrint('🔍 [FILTER-BUILD] State filter: $adminState');
     debugPrint('🔍 [FILTER-QUERY] Final query - State: $adminState, LGA: ${selectedLGA.isEmpty ? "none" : selectedLGA}, Ward: ${selectedWard.isEmpty ? "none" : selectedWard}');

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
-import 'package:risdi/core/utils/location_utils.dart';
+import 'package:impact_konnect/core/utils/location_utils.dart';
 
 // Persist location (state/lga/ward) caches to Hive so they survive app restarts
 

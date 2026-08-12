@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:risdi/model/model.dart';
-import 'package:risdi/screens/stakeholder_view.dart';
-import 'package:risdi/services/stakeholder_cache_service.dart';
-import 'package:risdi/services/location_service.dart';
-import 'package:risdi/model/stakeholder_contact_model.dart';
+import 'package:impact_konnect/model/model.dart';
+import 'package:impact_konnect/screens/stakeholder_view.dart';
+import 'package:impact_konnect/services/stakeholder_cache_service.dart';
+import 'package:impact_konnect/services/location_service.dart';
+import 'package:impact_konnect/model/stakeholder_contact_model.dart';
 
 class StakeholderListScreen extends StatefulWidget {
   final String? initialFilter;
@@ -29,6 +29,7 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
   String? selectedWard;
   bool isLoading = true;
   String? userState;
+  String? userOrganizationId;
   late StakeholderCacheService _cacheService;
   late LocationService _locationService;
 
@@ -76,6 +77,7 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
         if (userDoc.exists) {
           setState(() {
             userState = userDoc.data()?['state'] ?? 'Lagos';
+            userOrganizationId = userDoc.data()?['organizationId'] as String?;
           });
         } else {
           setState(() {
@@ -112,10 +114,13 @@ class _StakeholderListScreenState extends State<StakeholderListScreen> {
 
     // Fetch fresh data from Firestore in background
     try {
-      final querySnapshot = await FirebaseFirestore.instance
+      Query<Map<String, dynamic>> query = FirebaseFirestore.instance
           .collection('stakeholders')
-          .where('state', isEqualTo: userState ?? 'Lagos')
-          .get();
+          .where('state', isEqualTo: userState ?? 'Lagos');
+      if (userOrganizationId != null) {
+        query = query.where('organizationId', isEqualTo: userOrganizationId);
+      }
+      final querySnapshot = await query.get();
 
       List<Stakeholder> firestoreStakeholders = querySnapshot.docs
           .map((doc) => Stakeholder.fromFirestore(doc))

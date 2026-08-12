@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'colors.dart';
 import 'sizes.dart';
 
-/// Centralized ThemeData configuration for the RISDi application.
+/// Centralized ThemeData configuration for the Impact Konnect application.
 /// Provides both light and dark theme variants with Material Design 3.
 class AppTheme {
   // Private constructor to prevent instantiation

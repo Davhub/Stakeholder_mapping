@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
-import 'package:risdi/firebase_options.dart';
-import 'package:risdi/component/component.dart';
-import 'package:risdi/screens/screen.dart';
-import 'package:risdi/component/auth_form.dart';
-import 'package:risdi/screens/admin_dashboard_screen.dart';
-import 'package:risdi/screens/home_screen_with_navbar.dart'; // User dashboard // Auth/Login screen
+import 'package:impact_konnect/firebase_options.dart';
+import 'package:impact_konnect/component/component.dart';
+import 'package:impact_konnect/screens/screen.dart';
+import 'package:impact_konnect/component/auth_form.dart';
+import 'package:impact_konnect/screens/admin_dashboard_screen.dart';
+import 'package:impact_konnect/screens/home_screen_with_navbar.dart'; // User dashboard // Auth/Login screen
 
 class SplashScreen extends StatefulWidget {
   final bool hasSeenOnboarding;
@@ -98,9 +98,31 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
 
       if (userDoc.exists) {
-        String role = userDoc['role']; // Fetch role field from Firestore
+        // Read defensively: userDoc['role'] throws when the field is
+        // absent, which would bounce an otherwise valid session back to
+        // the login screen for no visible reason.
+        final data = userDoc.data() as Map<String, dynamic>?;
+        final rawRole = data == null ? null : data['role'];
+        final String role =
+            (rawRole is String && rawRole.trim().isNotEmpty)
+                ? rawRole.trim()
+                : 'User';
 
-        if (role == 'Admin') {
+        // Honour a Super Admin disabling the account: drop the restored
+        // session instead of letting it straight back into the app.
+        final rawActive = data == null ? null : data['active'];
+        if (rawActive is bool && !rawActive) {
+          await FirebaseAuth.instance.signOut();
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const AuthScreen()),
+          );
+          return;
+        }
+
+        // 'Super Admin' is a superset of 'Admin' and gets the same
+        // dashboard on mobile.
+        if (role == 'Admin' || role == 'Super Admin') {
           // Navigate to AdminDashboardScreen
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
@@ -152,16 +174,17 @@ class _SplashScreenState extends State<SplashScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Image.asset('assets/1.png', width: 240, height: 240),
+                          Image.asset('assets/icon/icon_standard.png',
+                              width: 200, height: 200),
                           const SizedBox(height: 20),
-                          const Text(
-                            'RISDi',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1f6ed4),
-                            ),
-                          ),
+                          // const Text(
+                          //   'Impact Konnect',
+                          //   style: TextStyle(
+                          //     fontSize: 42,
+                          //     fontWeight: FontWeight.bold,
+                          //     color: Color(0xFF1f6ed4),
+                          //   ),
+                          // ),
                         ],
                       ),
                     ),

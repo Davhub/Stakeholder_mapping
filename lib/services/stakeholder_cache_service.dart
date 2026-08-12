@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:risdi/core/utils/location_utils.dart';
-import 'package:risdi/model/stakeholder_contact_model.dart';
+import 'package:impact_konnect/core/utils/location_utils.dart';
+import 'package:impact_konnect/model/stakeholder_contact_model.dart';
 
 /// Service for managing Stakeholder caching with Hive
 /// Provides fast local-first data retrieval with background Firestore sync

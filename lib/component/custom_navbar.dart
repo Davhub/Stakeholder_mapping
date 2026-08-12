@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:risdi/screens/screen.dart';
-import 'package:risdi/services/app_state_service.dart';
+import 'package:impact_konnect/screens/screen.dart';
+import 'package:impact_konnect/services/app_state_service.dart';
 
 class CustomNavBar extends StatelessWidget {
   final int currentIndex;
